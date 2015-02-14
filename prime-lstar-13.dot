@@ -1,0 +1,46 @@
+digraph g {
+__start0 [label="" shape="none"];
+
+	s0 [shape="circle" label="0"];
+	s1 [shape="circle" label="1"];
+	s2 [shape="circle" label="2"];
+	s3 [shape="circle" label="3"];
+	s4 [shape="circle" label="4"];
+	s5 [shape="circle" label="5"];
+	s6 [shape="circle" label="6"];
+	s7 [shape="circle" label="7"];
+	s8 [shape="circle" label="8"];
+	s9 [shape="circle" label="9"];
+	s0 -> s1 [label="INCR / OK"];
+	s0 -> s0 [label="DECR / ERROR"];
+	s0 -> s0 [label="GET / NO"];
+	s1 -> s2 [label="INCR / OK"];
+	s1 -> s0 [label="DECR / OK"];
+	s1 -> s1 [label="GET / NO"];
+	s2 -> s4 [label="INCR / OK"];
+	s2 -> s1 [label="DECR / OK"];
+	s2 -> s2 [label="GET / YES"];
+	s3 -> s9 [label="INCR / OK"];
+	s3 -> s4 [label="DECR / OK"];
+	s3 -> s3 [label="GET / NO"];
+	s4 -> s3 [label="INCR / OK"];
+	s4 -> s2 [label="DECR / OK"];
+	s4 -> s4 [label="GET / YES"];
+	s5 -> s6 [label="INCR / OK"];
+	s5 -> s9 [label="DECR / OK"];
+	s5 -> s5 [label="GET / NO"];
+	s6 -> s7 [label="INCR / OK"];
+	s6 -> s5 [label="DECR / OK"];
+	s6 -> s6 [label="GET / YES"];
+	s7 -> s8 [label="INCR / OK"];
+	s7 -> s6 [label="DECR / OK"];
+	s7 -> s7 [label="GET / NO"];
+	s8 -> s3 [label="INCR / OK"];
+	s8 -> s7 [label="DECR / OK"];
+	s8 -> s8 [label="GET / NO"];
+	s9 -> s5 [label="INCR / OK"];
+	s9 -> s3 [label="DECR / OK"];
+	s9 -> s9 [label="GET / YES"];
+
+__start0 -> s0;
+}
