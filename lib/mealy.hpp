@@ -37,3 +37,17 @@ inline auto is_complete(const Mealy & m){
 	}
 	return true;
 }
+
+inline auto apply(Mealy const & m, size_t state, size_t input){
+	return m.graph[state][input];
+}
+
+template <typename Iterator>
+auto apply(Mealy const & m, size_t state, Iterator b, Iterator e){
+	Mealy::edge ret;
+	while(b != e){
+		ret = apply(m, state, *b++);
+		state = ret.to;
+	}
+	return ret;
+}
