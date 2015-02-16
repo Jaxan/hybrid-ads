@@ -71,8 +71,7 @@ int main(int argc, char *argv[]){
 	cout << "starting with " << part.size() << " blocks / " << N << " states" << endl;
 
 	queue<pair<partition_refine::BlockRef, reference_wrapper<splijtboom>>> work;
-	const auto push = [&work](auto br, auto & sp){ work.push({br, sp});
-	cout << "pushed "; for(auto && x : sp.states) cout << x; cout << endl; };
+	const auto push = [&work](auto br, auto & sp){ work.push({br, sp}); };
 	const auto pop = [&work](){ const auto r = work.front(); work.pop(); return r; };
 
 	push(part.find(0), root);
@@ -82,14 +81,18 @@ int main(int argc, char *argv[]){
 		auto block = block_boom.first;
 		splijtboom & boom = block_boom.second;
 
-		cout << "current\t";
-		for(auto s : boom.states) cout << s << " ";
-		cout << endl;
+		if(verbose){
+			cout << "current\t";
+			for(auto s : boom.states) cout << s << " ";
+			cout << endl;
+		}
 
 		if(boom.states.size() == 1) continue;
 		// if(elems_in(*block) == 1) continue;
 
-		cout << "considering" << endl;
+		if(verbose){
+			cout << "considering" << endl;
+		}
 
 		// First try to split on output
 		for(size_t symbol = 0; symbol < P; ++symbol){
@@ -118,7 +121,9 @@ int main(int argc, char *argv[]){
 				push(new_blocks.first++, boom.children[i++]);
 			}
 
-			cout << "splitted output into " << nb << endl;
+			if(verbose){
+				cout << "splitted output into " << nb << endl;
+			}
 
 			goto has_split;
 		}
@@ -139,15 +144,17 @@ int main(int argc, char *argv[]){
 				continue;
 			}
 
-			cout << "split\t";
-			for(auto s : oboom.states) cout << s << " ";
-			cout << endl;
-			cout << "into ";
-			for(auto & c : oboom.children) {
-				for(auto s : c.states) cout << s << " ";
-				cout << "- ";
+			if(verbose){
+				cout << "split\t";
+				for(auto s : oboom.states) cout << s << " ";
+				cout << endl;
+				cout << "into ";
+				for(auto & c : oboom.children) {
+					for(auto s : c.states) cout << s << " ";
+					cout << "- ";
+				}
+				cout << endl;
 			}
-			cout << endl;
 
 			// a succesful split, construct the children
 			boom.seperator.resize(oboom.seperator.size() + 1);
@@ -175,7 +182,9 @@ int main(int argc, char *argv[]){
 				push(new_blocks.first++, boom.children[i++]);
 			}
 
-			cout << "splitted state into " << nb << endl;
+			if(verbose){
+				cout << "splitted state into " << nb << endl;
+			}
 
 			goto has_split;
 		}
@@ -184,7 +193,7 @@ int main(int argc, char *argv[]){
 
 		has_split:
 		cout << "we have " << part.size() << " blocks / " << N << " states" << endl;
-		cout << "and still " << work.size() << " work" << endl << endl;
+		cout << "and still " << work.size() << " work" << endl;
 	}
 	cout << "jippiejeejjo" << endl;
 }
