@@ -1,6 +1,8 @@
 #include <mealy.hpp>
 #include <partition.hpp>
 #include <read_mealy_from_dot.hpp>
+#include <splitting_tree.hpp>
+#include <write_splitting_tree_to_dot.hpp>
 
 #include <cassert>
 #include <numeric>
@@ -12,54 +14,20 @@ using namespace std;
 
 int verbose = 0;
 
-struct splijtboom {
-	splijtboom(size_t N)
-	: states(N)
-	{
-		iota(begin(states), end(states), 0);
-	}
-
-	vector<state> states;
-	vector<splijtboom> children;
-	vector<input> seperator;
-	int mark = 0;
-};
-
-template <typename Fun>
-void lca_impl1(splijtboom & node, Fun && f){
-	node.mark = 0;
-	if(!node.children.empty()){
-		for(auto && c : node.children){
-			lca_impl1(c, f);
-			if(c.mark) node.mark++;
-		}
-	} else {
-		for(auto && s : node.states){
-			if(f(s)) node.mark++;
-		}
-	}
-}
-
-splijtboom & lca_impl2(splijtboom & node){
-	if(node.mark > 1) return node;
-	for(auto && c : node.children){
-		if(c.mark > 0) return lca_impl2(c);
-	}
-	return node; // this is a leaf
-}
-
-template <typename Fun>
-splijtboom & lca(splijtboom & root, Fun && f){
-	static_assert(is_same<decltype(f(0)), bool>::value, "f should return a bool");
-	lca_impl1(root, f);
-	return lca_impl2(root);
+template <typename T>
+std::vector<T> concat(std::vector<T> const & l, std::vector<T> const & r){
+	std::vector<T> ret(l.size() + r.size());
+	auto it = copy(begin(l), end(l), begin(ret));
+	copy(begin(r), end(r), it);
+	return ret;
 }
 
 int main(int argc, char *argv[]){
 	if(argc < 2) return 1;
 	if(argc > 2) verbose = argc - 2;
 
-	const auto g = read_mealy_from_dot(argv[1], verbose);
+	const string filename = argv[1];
+	const auto g = read_mealy_from_dot(filename, verbose);
 	assert(is_complete(g));
 
 	const auto N = g.graph.size();
@@ -195,6 +163,7 @@ int main(int argc, char *argv[]){
 		cout << "we have " << part.size() << " blocks / " << N << " states" << endl;
 		cout << "and still " << work.size() << " work" << endl;
 	}
-	cout << "jippiejeejjo" << endl;
+
+	write_splitting_tree_to_dot(root, filename + ".splitting_tree.dot");
 }
 
