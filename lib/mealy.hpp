@@ -1,8 +1,14 @@
 #pragma once
 
+#include "phantom.hpp"
+
 #include <map>
 #include <string>
 #include <vector>
+
+using state = phantom<size_t, struct state_tag>;
+using input = phantom<size_t, struct input_tag>;
+using output = phantom<size_t, struct output_tag>;
 
 /*
  * Structure used for reading mealy files from dot files.
@@ -13,13 +19,13 @@
  */
 struct Mealy {
 	struct edge {
-		size_t to = -1;
-		size_t output = -1;
+		state to = -1;
+		output output = -1;
 	};
 
-	std::map<std::string, size_t> nodes_indices;
-	std::map<std::string, size_t> input_indices;
-	std::map<std::string, size_t> output_indices;
+	std::map<std::string, state> nodes_indices;
+	std::map<std::string, input> input_indices;
+	std::map<std::string, output> output_indices;
 
 	// state -> input -> (output, state)
 	std::vector<std::vector<edge>> graph;
@@ -31,19 +37,19 @@ struct Mealy {
 };
 
 inline auto is_complete(const Mealy & m){
-	for(int n = 0; n < m.graph_size; ++n){
-		if(m.graph[n].size() != m.input_size) return false;
-		for(auto && e : m.graph[n]) if(e.to == -1 || e.output == -1) return false;
+	for(state n = 0; n < m.graph_size; ++n){
+		if(m.graph[n.base()].size() != m.input_size) return false;
+		for(auto && e : m.graph[n.base()]) if(e.to == -1 || e.output == -1) return false;
 	}
 	return true;
 }
 
-inline auto apply(Mealy const & m, size_t state, size_t input){
-	return m.graph[state][input];
+inline auto apply(Mealy const & m, state state, input input){
+	return m.graph[state.base()][input.base()];
 }
 
 template <typename Iterator>
-auto apply(Mealy const & m, size_t state, Iterator b, Iterator e){
+auto apply(Mealy const & m, state state, Iterator b, Iterator e){
 	Mealy::edge ret;
 	while(b != e){
 		ret = apply(m, state, *b++);

@@ -55,9 +55,9 @@ Mealy read_mealy_from_dot(istream& in, int verbose){
 
 		// add edge
 		m.graph.resize(m.graph_size);
-		auto & v = m.graph[m.nodes_indices[lh]];
+		auto & v = m.graph[m.nodes_indices[lh].base()];
 		v.resize(m.input_size);
-		v[m.input_indices[input]] = {m.nodes_indices[rh], m.output_indices[output]};
+		v[m.input_indices[input].base()] = {m.nodes_indices[rh], m.output_indices[output]};
 	}
 
 	if(verbose >= 1){

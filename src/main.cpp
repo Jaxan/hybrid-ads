@@ -19,9 +19,9 @@ struct splijtboom {
 		iota(begin(states), end(states), 0);
 	}
 
-	vector<size_t> states;
+	vector<state> states;
 	vector<splijtboom> children;
-	vector<size_t> seperator;
+	vector<input> seperator;
 	int mark = 0;
 };
 
@@ -95,9 +95,9 @@ int main(int argc, char *argv[]){
 		}
 
 		// First try to split on output
-		for(size_t symbol = 0; symbol < P; ++symbol){
-			auto new_blocks = part.refine(block, [symbol, &g](size_t state){
-				return apply(g, state, symbol).output;
+		for(input symbol = 0; symbol < P; ++symbol){
+			auto new_blocks = part.refine(block, [symbol, &g](state state){
+				return apply(g, state, symbol).output.base();
 			}, Q);
 
 			if(elems_in(new_blocks) == 1){
@@ -129,14 +129,14 @@ int main(int argc, char *argv[]){
 		}
 
 		// Then try to split on state
-		for(size_t symbol = 0; symbol < P; ++symbol){
+		for(input symbol = 0; symbol < P; ++symbol){
 			vector<bool> successor_states(N, false);
 			for(auto && state : *block){
-				successor_states[g.graph[state][symbol].to] = true;
+				successor_states[apply(g, state, symbol).to.base()] = true;
 			}
 
-			auto & oboom = lca(root, [&successor_states](size_t state) -> bool{
-				return successor_states[state];
+			auto & oboom = lca(root, [&successor_states](state state) -> bool{
+				return successor_states[state.base()];
 			});
 
 			if(oboom.children.empty()){
@@ -163,7 +163,7 @@ int main(int argc, char *argv[]){
 			copy(begin(oboom.seperator), end(oboom.seperator), it);
 
 			auto new_blocks = part.refine(block, [&boom, &g](size_t state){
-				return apply(g, state, begin(boom.seperator), end(boom.seperator)).output;
+				return apply(g, state, begin(boom.seperator), end(boom.seperator)).output.base();
 			}, Q);
 
 			if(elems_in(new_blocks) == 1){

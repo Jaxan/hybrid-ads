@@ -5,7 +5,13 @@
 
 template <typename Base, typename T>
 struct phantom : boost::operators<phantom<Base, T>>, boost::shiftable<phantom<Base, T>> {
+	phantom() = default;
 	phantom(Base y) : x(y) {}
+	phantom(phantom const &) = default;
+	phantom& operator=(phantom const &) = default;
+	phantom(phantom &&) = default;
+	phantom& operator=(phantom &&) = default;
+
 	explicit operator Base() const { return x; }
 	Base base() const { return x; }
 
@@ -41,4 +47,3 @@ std::ostream & operator<<(std::ostream & out, phantom<B, T> p){ return out << p.
 
 template <typename B, typename T>
 std::istream & operator>>(std::istream & in, phantom<B, T> & p){ return in >> p.x; }
-
