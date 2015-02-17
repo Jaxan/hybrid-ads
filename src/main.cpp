@@ -4,11 +4,12 @@
 #include <splitting_tree.hpp>
 #include <write_splitting_tree_to_dot.hpp>
 
+#include <algorithm>
 #include <cassert>
-#include <numeric>
+#include <iostream>
+#include <iterator>
 #include <queue>
-#include <type_traits>
-#include <vector>
+#include <utility>
 
 using namespace std;
 
@@ -39,10 +40,41 @@ int main(int argc, char *argv[]){
 	cout << "starting with " << part.size() << " blocks / " << N << " states" << endl;
 
 	queue<pair<partition_refine::BlockRef, reference_wrapper<splijtboom>>> work;
-	const auto push = [&work](auto br, auto & sp){ work.push({br, sp}); };
-	const auto pop = [&work](){ const auto r = work.front(); work.pop(); return r; };
+	const auto push = [&work](auto br, auto & sp) { work.push({br, sp}); };
+	const auto pop = [&work]() { const auto r = work.front(); work.pop(); return r; };
+	const auto add_push_new_block = [&](auto new_blocks, auto & boom) {
+		const auto nb = distance(new_blocks.first, new_blocks.second);
+		boom.children.assign(nb, splijtboom(0));
 
-	push(part.find(0), root);
+		auto i = 0;
+		while(new_blocks.first != new_blocks.second){
+			for(auto && s : *new_blocks.first){
+				boom.children[i].states.push_back(s);
+			}
+
+			push(new_blocks.first++, boom.children[i++]);
+		}
+
+		if(verbose){
+			cout << "splitted output into " << nb << endl;
+		}
+	};
+	const auto is_valid = [N, &g](auto blocks, auto symbol){
+		for(auto && block : blocks) {
+			partition_refine s_part(block);
+			const auto new_blocks = s_part.refine(*s_part.begin(), [symbol, &g](state state){
+				return apply(g, state, symbol).to.base();
+			}, N);
+			for(auto && new_block : new_blocks){
+				if(distance(new_block.begin(), new_block.end()) != 1) return false;
+			}
+		}
+		return true;
+	};
+
+	push(part.begin(), root);
+
+	size_t days_without_progress = 0;
 
 	while(!work.empty()){
 		auto block_boom = pop();
@@ -56,42 +88,23 @@ int main(int argc, char *argv[]){
 		}
 
 		if(boom.states.size() == 1) continue;
-		// if(elems_in(*block) == 1) continue;
-
-		if(verbose){
-			cout << "considering" << endl;
-		}
 
 		// First try to split on output
 		for(input symbol = 0; symbol < P; ++symbol){
-			auto new_blocks = part.refine(block, [symbol, &g](state state){
+			const auto new_blocks = part.refine(*block, [symbol, &g](state state){
 				return apply(g, state, symbol).output.base();
 			}, Q);
 
-			if(elems_in(new_blocks) == 1){
-				// continue with other input symbols
-				// (refine always updates the block)
-				block = new_blocks.first;
-				continue;
-			}
+			// no split -> continue with other input symbols
+			if(new_blocks.size() == 1) continue;
 
-			// a succesful split, add the children
-			const auto nb = distance(new_blocks.first, new_blocks.second);
-			boom.children.assign(nb, splijtboom(0));
+			// not a valid split -> continue
+			if(!is_valid(new_blocks, symbol)) continue;
+
+			// a succesful split, update partition and add the children
 			boom.seperator = {symbol};
-
-			auto i = 0;
-			while(new_blocks.first != new_blocks.second){
-				for(auto && s : *new_blocks.first){
-					boom.children[i].states.push_back(s);
-				}
-
-				push(new_blocks.first++, boom.children[i++]);
-			}
-
-			if(verbose){
-				cout << "splitted output into " << nb << endl;
-			}
+			const auto range = part.replace(block, move(new_blocks));
+			add_push_new_block(range, boom);
 
 			goto has_split;
 		}
@@ -107,61 +120,42 @@ int main(int argc, char *argv[]){
 				return successor_states[state.base()];
 			});
 
-			if(oboom.children.empty()){
-				// a leaf, hence not a split, try other symbols
+			// a leaf, hence not a split -> try other symbols
+			if(oboom.children.empty()) continue;
+
+			// possibly a succesful split, construct the children
+			const auto word = concat({symbol}, oboom.seperator);
+			const auto new_blocks = part.refine(*block, [word, &g](size_t state){
+				return apply(g, state, begin(word), end(word)).output.base();
+			}, Q);
+
+			// not a valid split -> continue
+			if(!is_valid(new_blocks, symbol)) continue;
+
+			if(new_blocks.size() == 1){
+				cerr << "WARNING: Refinement did not give finer partition, can not happen\n";
 				continue;
 			}
 
-			if(verbose){
-				cout << "split\t";
-				for(auto s : oboom.states) cout << s << " ";
-				cout << endl;
-				cout << "into ";
-				for(auto & c : oboom.children) {
-					for(auto s : c.states) cout << s << " ";
-					cout << "- ";
-				}
-				cout << endl;
-			}
-
-			// a succesful split, construct the children
-			boom.seperator.resize(oboom.seperator.size() + 1);
-			auto it = begin(boom.seperator);
-			*it++ = symbol;
-			copy(begin(oboom.seperator), end(oboom.seperator), it);
-
-			auto new_blocks = part.refine(block, [&boom, &g](size_t state){
-				return apply(g, state, begin(boom.seperator), end(boom.seperator)).output.base();
-			}, Q);
-
-			if(elems_in(new_blocks) == 1){
-				throw logic_error("Refinement did not give finer partition, can not happen");
-			}
-
-			const auto nb = distance(new_blocks.first, new_blocks.second);
-			boom.children.assign(nb, splijtboom(0));
-
-			auto i = 0;
-			while(new_blocks.first != new_blocks.second){
-				for(auto && s : *new_blocks.first){
-					boom.children[i].states.push_back(s);
-				}
-
-				push(new_blocks.first++, boom.children[i++]);
-			}
-
-			if(verbose){
-				cout << "splitted state into " << nb << endl;
-			}
+			// update partition and add the children
+			boom.seperator = word;
+			const auto range = part.replace(block, move(new_blocks));
+			add_push_new_block(range, boom);
 
 			goto has_split;
 		}
-		push(block, boom);
+
 		cout << "no split :(" << endl;
+		if(days_without_progress++ >= work.size()) {
+			cerr << "No distinguishing seq found!\n";
+			break;
+		}
+		push(block, boom);
+		continue;
 
 		has_split:
-		cout << "we have " << part.size() << " blocks / " << N << " states" << endl;
-		cout << "and still " << work.size() << " work" << endl;
+		cout << "blocks: " << part.size() << ", states: " << N << ", work: " << work.size() << endl;
+		days_without_progress = 0;
 	}
 
 	write_splitting_tree_to_dot(root, filename + ".splitting_tree.dot");

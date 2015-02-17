@@ -8,81 +8,94 @@
 
 #include <iostream>
 
-namespace std {
-	template <typename Iterator>
-	auto begin(pair<Iterator, Iterator> p) { return p.first; }
-	template <typename Iterator>
-	auto end(pair<Iterator, Iterator> p) { return ++p.second; } // Kind of stupid
-}
+using Elements = std::list<size_t>;
 
-template <typename R>
-size_t elems_in(R range){
-	size_t ret = 0;
+struct Block {
+	Elements::iterator first;
+	Elements::iterator second;
 
-	auto b = range.first;
-	auto e = range.second;
-	while(b++ != e) ret++;
-	return ret;
-}
+	auto begin() const { return first; }
+	auto end() const { return std::next(second); }
+
+	bool operator==(Block const & rh) const {
+		return first == rh.first && second == rh.second;
+	}
+};
 
 struct partition_refine {
-	using Elements = std::list<size_t>;
-	using Block = std::pair<Elements::iterator, Elements::iterator>;
 	using Blocks = std::list<Block>;
 	using BlockRef = Blocks::iterator;
 
 	partition_refine(size_t n)
 	: elements(n, 0)
-	, blocks{{begin(elements), --end(elements)}}
-	, find_table(n, begin(blocks))
+	, blocks{{elements.begin(), --elements.end()}}
 	{
-		std::iota(begin(elements), end(elements), 0);
+		std::iota(elements.begin(), elements.end(), 0);
 	}
 
-	auto find(size_t element){
-		return find_table[element];
-	}
+	partition_refine(Block b)
+	: elements(b.begin(), b.end())
+	, blocks{{elements.begin(), --elements.end()}}
+	{}
 
-	auto size() const {
-		return blocks.size();
+	partition_refine() = delete;
+	partition_refine(partition_refine const &) = delete;
+	partition_refine& operator=(partition_refine const &) = delete;
+	partition_refine(partition_refine&&) = default;
+	partition_refine& operator=(partition_refine&&) = default;
+
+	auto size() const { return blocks.size(); }
+	auto begin() { return blocks.begin(); }
+	auto end() { return blocks.end(); }
+
+	// Deprecated since there is no more O(1) lookup
+	auto find(size_t x){
+		for(auto & b : blocks){
+			auto it = std::find(b.begin(), b.end(), x);
+			if(it != b.begin()) return b;
+		}
+
+		return Block{};
 	}
 
 	template <typename F>
-	auto refine(BlockRef br, F && function, size_t output_size){
+	auto refine(Block br, F && function, size_t output_size){
 		static_assert(std::is_same<decltype(function(0)), size_t>::value, "Function should return size_t");
-		if(br == BlockRef{}) throw std::logic_error("Passing null ref");
-		if(br == blocks.end()) throw std::logic_error("Invalid block");
-		if(br->first == elements.end() || br->second == elements.end()) throw std::logic_error("Invalid block range");
+		if(br == Block{}) throw std::logic_error("Empty block range");
+		if(br.first == elements.end() || br.second == elements.end()) throw std::logic_error("Invalid block range");
+
+		Blocks new_blocks;
 		std::vector<BlockRef> A(output_size);
 
-		auto b = *br;
-		auto r1 = blocks.erase(br);
-		auto r2 = r1;
-
-		auto it = begin(b);
-		auto ed = end(b);
+		auto it = br.begin();
+		auto ed = br.end();
 		while(it != ed){
-			const auto x = *it;
-			const auto y = function(x);
+			const auto y = function(*it);
 			if(y >= output_size) throw std::runtime_error("Output is too big");
 
 			auto & ar = A[y];
 			if(ar == BlockRef{}){
-				r2 = ar = blocks.insert(r2, {it, it});
+				ar = new_blocks.insert(new_blocks.end(), {it, it});
 				it++;
 			} else {
 				auto current = it++;
 				elements.splice(++ar->second, elements, current);
 				*ar = {ar->first, current};
 			}
-			find_table[x] = ar;
 		}
 
-		return make_pair(r2, r1);
+		return new_blocks;
+	}
+
+	auto replace(BlockRef br, Blocks new_blocks){
+		const auto it = blocks.erase(br);
+		const auto b = new_blocks.begin();
+		const auto e = std::prev(new_blocks.end());
+		blocks.splice(it, new_blocks);
+		return make_pair(b, std::next(e));
 	}
 
 private:
 	Elements elements;
-	std::list<Block> blocks;
-	std::vector<BlockRef> find_table;
+	Blocks blocks;
 };
