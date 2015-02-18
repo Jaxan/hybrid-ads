@@ -1,0 +1,4 @@
+*.dot
+*.png
+*dist_seq
+*splitting_tree
