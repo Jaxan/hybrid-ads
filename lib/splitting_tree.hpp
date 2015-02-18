@@ -7,8 +7,9 @@
 #include <vector>
 
 struct splijtboom {
-	splijtboom(size_t N)
+	splijtboom(size_t N, size_t depth)
 	: states(N)
+	, depth(depth)
 	{
 		std::iota(begin(states), end(states), 0);
 	}
@@ -16,7 +17,8 @@ struct splijtboom {
 	std::vector<state> states;
 	std::vector<splijtboom> children;
 	std::vector<input> seperator;
-	int mark = 0;
+	size_t depth = 0;
+	int mark = 0; // used for some algorithms...
 };
 
 template <typename Fun>
