@@ -6,6 +6,11 @@
 #include <cassert>
 #include <iostream>
 
+#include <stack>
+#include <functional>
+#include <vector>
+#include <utility>
+
 using namespace std;
 
 int main(int argc, char *argv[]){
@@ -34,5 +39,37 @@ int main(int argc, char *argv[]){
 	const string dseq_filename = splitting_tree.is_complete ? (filename + ".dist_seq") : (filename + ".incomplete_dist_seq");
 	write_adaptive_distinguishing_sequence_to_dot(distinguishing_sequence.sequence, dseq_filename);
 	cerr << "\tdone\n" << endl;
+
+	vector<vector<input>> uios(splitting_tree.root.states.size());
+	stack<pair<vector<input>, reference_wrapper<const dist_seq>>> work;
+	work.push({{}, distinguishing_sequence.sequence});
+
+	while(!work.empty()){
+		auto word = work.top().first;
+		const dist_seq & node = work.top().second;
+		work.pop();
+
+		if(node.CI.size() == 1){
+			const auto state = node.CI[0].second;
+			uios[state.base()] = word;
+			continue;
+		}
+
+		for(auto && i : node.word)
+			word.push_back(i);
+
+		for(auto && c : node.children)
+			work.push({word, c});
+	}
+
+	for(state i = 0; i < uios.size(); ++i){
+		cout << i << ":\t";
+		if(uios[i.base()].empty()) {
+			cout << "no sequence :(";
+		} else {
+			for(auto && c : uios[i.base()]) cout << c << " ";
+		}
+		cout << endl;
+	}
 }
 
