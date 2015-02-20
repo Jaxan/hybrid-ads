@@ -1,9 +1,7 @@
 #include "read_mealy_from_dot.hpp"
-
 #include "mealy.hpp"
 
 #include <fstream>
-#include <iostream>
 #include <sstream>
 #include <string>
 
@@ -16,7 +14,7 @@ T get(istream& in){
 	return t;
 }
 
-Mealy read_mealy_from_dot(istream& in, int verbose){
+Mealy read_mealy_from_dot(istream& in){
 	Mealy m;
 
 	string line;
@@ -43,10 +41,6 @@ Mealy read_mealy_from_dot(istream& in, int verbose){
 		const auto slash = get<string>(ss);
 		const auto output = get<string>(ss);
 
-		if(verbose >= 2){
-			cout << lh << '\t' << rh << '\t' << input << '\t' << output << endl;
-		}
-
 		// make fresh indices, if needed
 		if(m.nodes_indices.count(lh) < 1) m.nodes_indices[lh] = m.graph_size++;
 		if(m.nodes_indices.count(rh) < 1) m.nodes_indices[rh] = m.graph_size++;
@@ -60,20 +54,10 @@ Mealy read_mealy_from_dot(istream& in, int verbose){
 		v[m.input_indices[input].base()] = {m.nodes_indices[rh], m.output_indices[output]};
 	}
 
-	if(verbose >= 1){
-		cout << "input_alphabet = \n";
-		for(auto && i : m.input_indices) cout << i.first << " ";
-		cout << endl;
-
-		cout << "output_alphabet = \n";
-		for(auto && o : m.output_indices) cout << o.first << " ";
-		cout << endl;
-	}
-
 	return m;
 }
 
-Mealy read_mealy_from_dot(const string& filename, int verbose){
+Mealy read_mealy_from_dot(const string& filename){
 	ifstream file(filename);
-	return read_mealy_from_dot(file, verbose);
+	return read_mealy_from_dot(file);
 }

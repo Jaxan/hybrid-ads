@@ -18,11 +18,11 @@ struct splijtboom {
 	std::vector<splijtboom> children;
 	std::vector<input> seperator;
 	size_t depth = 0;
-	int mark = 0; // used for some algorithms...
+	mutable int mark = 0; // used for some algorithms...
 };
 
 template <typename Fun>
-void lca_impl1(splijtboom & node, Fun && f){
+void lca_impl1(splijtboom const & node, Fun && f){
 	node.mark = 0;
 	if(!node.children.empty()){
 		for(auto && c : node.children){
@@ -49,4 +49,11 @@ splijtboom & lca(splijtboom & root, Fun && f){
 	static_assert(std::is_same<decltype(f(0)), bool>::value, "f should return a bool");
 	lca_impl1(root, f);
 	return lca_impl2(root);
+}
+
+template <typename Fun>
+const splijtboom & lca(const splijtboom & root, Fun && f){
+	static_assert(std::is_same<decltype(f(0)), bool>::value, "f should return a bool");
+	lca_impl1(root, f);
+	return lca_impl2(const_cast<splijtboom&>(root));
 }

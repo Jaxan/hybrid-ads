@@ -6,8 +6,6 @@
 #include <utility>
 #include <vector>
 
-#include <iostream>
-
 using Elements = std::list<size_t>;
 
 struct Block {

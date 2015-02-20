@@ -1,0 +1,45 @@
+#pragma once
+
+#include <functional>
+#include <ostream>
+#include <queue>
+#include <utility>
+
+// Generic printer for tree
+template <typename T, typename NodeString>
+void write_tree_to_dot(const T & tree, NodeString && node_string, std::ostream & out){
+	using namespace std;
+	out << "digraph g {\n";
+
+	// breadth first
+	int global_id = 0;
+	queue<pair<int, reference_wrapper<const T>>> work;
+	work.push({global_id++, tree});
+	while(!work.empty()){
+		const auto id = work.front().first;
+		const T & node = work.front().second;
+		work.pop();
+
+		out << "\n\ts" << id << " [label=\"";
+		node_string(node, out);
+		out << "\"];\n";
+
+		for(auto && c : node.children){
+			int new_id = global_id++;
+			out << "\ts" << id << " -> " << "s" << new_id << ";\n";
+			work.push({new_id, c});
+		}
+	}
+
+	out << "}" << endl;
+}
+
+
+// Specialized printing for splitting trees and dist seqs
+struct splijtboom;
+void write_splitting_tree_to_dot(const splijtboom & root, std::ostream & out);
+void write_splitting_tree_to_dot(const splijtboom & root, std::string const & filename);
+
+struct dist_seq;
+void write_adaptive_distinguishing_sequence_to_dot(const dist_seq & root, std::ostream & out);
+void write_adaptive_distinguishing_sequence_to_dot(const dist_seq & root, std::string const & filename);
