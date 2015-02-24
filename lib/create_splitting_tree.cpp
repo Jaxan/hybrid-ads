@@ -1,8 +1,7 @@
 #include "create_splitting_tree.hpp"
-#include "logging.hpp"
 
 #include <functional>
-#include <iostream>
+#include <numeric>
 #include <queue>
 #include <utility>
 
@@ -22,7 +21,6 @@ result create_splitting_tree(const Mealy& g){
 	const auto Q = g.output_indices.size();
 
 	result r(N);
-	auto & part = r.partition;
 	auto & root = r.root;
 	auto & succession = r.successor_cache;
 
@@ -31,33 +29,31 @@ result create_splitting_tree(const Mealy& g){
 	 * tree. We keep track of how many times we did no work. If this is too
 	 * much, there is no complete splitting tree.
 	 */
-	queue<pair<partition_refine::BlockRef, reference_wrapper<splijtboom>>> work;
+	queue<reference_wrapper<splijtboom>> work;
 	size_t days_without_progress = 0;
 
 	// Some lambda functions capturing some state, makes the code a bit easier :)
-	const auto push = [&work](auto br, auto & sp) { work.push({br, sp}); };
-	const auto pop = [&work]() { const auto r = work.front(); work.pop(); return r; };
-	const auto add_push_new_block = [&](auto new_blocks, auto & boom) {
-		const auto nb = distance(new_blocks.first, new_blocks.second);
-		boom.children.assign(nb, splijtboom(0, boom.depth + 1));
+	const auto add_push_new_block = [&work](auto new_blocks, auto & boom) {
+		boom.children.assign(new_blocks.size(), splijtboom(0, boom.depth + 1));
 
 		auto i = 0;
-		while(new_blocks.first != new_blocks.second){
-			for(auto && s : *new_blocks.first){
-				boom.children[i].states.push_back(s);
-			}
-
-			push(new_blocks.first++, boom.children[i++]);
+		for(auto && b : new_blocks){
+			boom.children[i++].states.assign(begin(b), end(b));
 		}
+
+		for(auto && c : boom.children){
+			work.push(c);
+		}
+
+		assert(boom.states.size() == accumulate(begin(boom.children), end(boom.children), 0, [](auto l, auto r) { return l + r.states.size(); }));
 	};
 	const auto is_valid = [N, &g](auto blocks, auto symbol){
 		for(auto && block : blocks) {
-			partition_refine s_part(block);
-			const auto new_blocks = s_part.refine(*s_part.begin(), [symbol, &g](state state){
+			const auto new_blocks = partition_(begin(block), end(block), [symbol, &g](state state){
 				return apply(g, state, symbol).to.base();
 			}, N);
 			for(auto && new_block : new_blocks){
-				if(distance(new_block.begin(), new_block.end()) != 1) return false;
+				if(new_block.size() != 1) return false;
 			}
 		}
 		return true;
@@ -68,18 +64,17 @@ result create_splitting_tree(const Mealy& g){
 	};
 
 	// We'll start with the root, obviously
-	push(part.begin(), root);
+	work.push(root);
 	while(!work.empty()){
-		const auto block_boom = pop();
-		const auto block = block_boom.first;
-		splijtboom & boom = block_boom.second;
+		splijtboom & boom = work.front();
+		work.pop();
 		const auto depth = boom.depth;
 
 		if(boom.states.size() == 1) continue;
 
 		// First try to split on output
 		for(input symbol = 0; symbol < P; ++symbol){
-			const auto new_blocks = part.refine(*block, [symbol, depth, &g, &update_succession](state state){
+			const auto new_blocks = partition_(begin(boom.states), end(boom.states), [symbol, depth, &g, &update_succession](state state){
 				const auto ret = apply(g, state, symbol);
 				update_succession(state, ret.to, depth);
 				return ret.output.base();
@@ -93,8 +88,7 @@ result create_splitting_tree(const Mealy& g){
 
 			// a succesful split, update partition and add the children
 			boom.seperator = {symbol};
-			const auto range = part.replace(block, move(new_blocks));
-			add_push_new_block(range, boom);
+			add_push_new_block(new_blocks, boom);
 
 			goto has_split;
 		}
@@ -102,7 +96,7 @@ result create_splitting_tree(const Mealy& g){
 		// Then try to split on state
 		for(input symbol = 0; symbol < P; ++symbol){
 			vector<bool> successor_states(N, false);
-			for(auto && state : *block){
+			for(auto && state : boom.states){
 				successor_states[apply(g, state, symbol).to.base()] = true;
 			}
 
@@ -115,7 +109,7 @@ result create_splitting_tree(const Mealy& g){
 
 			// possibly a succesful split, construct the children
 			const auto word = concat({symbol}, oboom.seperator);
-			const auto new_blocks = part.refine(*block, [word, depth, &g, &update_succession](state state){
+			const auto new_blocks = partition_(begin(boom.states), end(boom.states), [word, depth, &g, &update_succession](state state){
 				const auto ret = apply(g, state, begin(word), end(word));
 				update_succession(state, ret.to, depth);
 				return ret.output.base();
@@ -124,15 +118,11 @@ result create_splitting_tree(const Mealy& g){
 			// not a valid split -> continue
 			if(!is_valid(new_blocks, symbol)) continue;
 
-			if(new_blocks.size() == 1){
-				fire_once([]{ cerr << "WARNING: Refinement did not give finer partition, can not happen\n"; });
-				continue;
-			}
+			assert(new_blocks.size() > 1);
 
 			// update partition and add the children
 			boom.seperator = word;
-			const auto range = part.replace(block, move(new_blocks));
-			add_push_new_block(range, boom);
+			add_push_new_block(new_blocks, boom);
 
 			goto has_split;
 		}
@@ -142,7 +132,7 @@ result create_splitting_tree(const Mealy& g){
 			r.is_complete = false;
 			return r;
 		}
-		push(block, boom);
+		work.push(boom);
 		continue;
 
 		has_split:

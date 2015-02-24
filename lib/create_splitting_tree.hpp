@@ -9,16 +9,12 @@
 struct result {
 	result(size_t N)
 	: root(N, 0)
-	, partition(N)
 	, successor_cache()
 	, is_complete(true)
 	{}
 
 	// The splitting tree as described in Lee & Yannakakis
 	splijtboom root;
-
-	// The running partition of states
-	partition_refine partition;
 
 	// Encodes f_u : depth -> state -> state, where only the depth of u is of importance
 	std::vector<std::vector<state>> successor_cache;

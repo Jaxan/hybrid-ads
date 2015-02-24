@@ -62,14 +62,7 @@ int main(int argc, char *argv[]){
 			work.push({word, c});
 	}
 
-	for(state i = 0; i < uios.size(); ++i){
-		cout << i << ":\t";
-		if(uios[i.base()].empty()) {
-			cout << "no sequence :(";
-		} else {
-			for(auto && c : uios[i.base()]) cout << c << " ";
-		}
-		cout << endl;
-	}
+	size_t uio_count = count_if(begin(uios), end(uios), [](auto && u){ return !u.empty(); });
+	cout << uio_count << " / " << uios.size() << endl;
 }
 

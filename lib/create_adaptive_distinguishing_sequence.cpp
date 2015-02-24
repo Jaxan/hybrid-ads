@@ -1,10 +1,9 @@
 #include "create_adaptive_distinguishing_sequence.hpp"
-#include "logging.hpp"
 #include "splitting_tree.hpp"
 
 #include <algorithm>
+#include <cassert>
 #include <functional>
-#include <iostream>
 #include <queue>
 #include <vector>
 
@@ -27,7 +26,6 @@ result2 create_adaptive_distinguishing_sequence(const result & splitting_tree){
 			work2.pop();
 
 			if(node.CI.size() < 2) continue;
-			if(node.depth > 500) continue;
 
 			vector<bool> states(N, false);
 			for(auto && state : node.CI){
@@ -61,7 +59,7 @@ result2 create_adaptive_distinguishing_sequence(const result & splitting_tree){
 					}
 				}
 
-				// woops. fixme
+				// FIXME: this should/could be done without sorting...
 				sort(begin(new_c.CI), end(new_c.CI));
 
 				if(!new_c.CI.empty()){
@@ -69,11 +67,7 @@ result2 create_adaptive_distinguishing_sequence(const result & splitting_tree){
 				}
 			}
 
-			// FIXME: can not happen????
-			if(node.children.size() == 1) {
-				fire_once([]{ cerr << "WARNING: Only one child in dist seq\n"; });
-				continue;
-			}
+			assert(node.children.size() > 1);
 
 			for(auto & c : node.children) {
 				work2.push(c);
