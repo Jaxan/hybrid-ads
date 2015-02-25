@@ -1,10 +1,36 @@
 #pragma once
 
-#include <mutex>
+#include <chrono>
+#include <iostream>
 
-// Works particularly nice with lambda's, as they give naturally unique types :)
-template <typename F>
-void fire_once(F && f){
-	static std::once_flag flag;
-	std::call_once(flag, f);
-}
+struct timer{
+	using clock = std::chrono::high_resolution_clock;
+	using time = std::chrono::time_point<clock>;
+	using seconds = std::chrono::duration<double>;
+
+	std::string name;
+	time begin;
+	bool active = true;
+
+	timer(std::string name)
+	: name(name)
+	, begin(clock::now())
+	{
+		std::cerr << name << std::endl;
+	}
+
+	void stop(){
+		if(!active) return;
+		time end = clock::now();
+		std::cerr << "* " << from_duration(end - begin) << '\t' << name << std::endl;
+		active = false;
+	}
+
+	~timer(){
+		stop();
+	}
+
+	static double from_duration(seconds s){
+		return s.count();
+	}
+};

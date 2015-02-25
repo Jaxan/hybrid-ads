@@ -23,4 +23,11 @@ struct result {
 	bool is_complete;
 };
 
-result create_splitting_tree(Mealy const & m);
+struct options {
+	bool check_validity = true;
+};
+
+constexpr options with_validity_check{true};
+constexpr options without_validity_check{false};
+
+result create_splitting_tree(Mealy const & m, options opt);

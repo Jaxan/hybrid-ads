@@ -15,7 +15,7 @@ std::vector<T> concat(std::vector<T> const & l, std::vector<T> const & r){
 	return ret;
 }
 
-result create_splitting_tree(const Mealy& g){
+result create_splitting_tree(const Mealy& g, options opt){
 	const auto N = g.graph.size();
 	const auto P = g.input_indices.size();
 	const auto Q = g.output_indices.size();
@@ -47,7 +47,9 @@ result create_splitting_tree(const Mealy& g){
 
 		assert(boom.states.size() == accumulate(begin(boom.children), end(boom.children), 0, [](auto l, auto r) { return l + r.states.size(); }));
 	};
-	const auto is_valid = [N, &g](auto blocks, auto symbol){
+	const auto is_valid = [N, opt, &g](auto blocks, auto symbol){
+		if(!opt.check_validity) return true;
+
 		for(auto && block : blocks) {
 			const auto new_blocks = partition_(begin(block), end(block), [symbol, &g](state state){
 				return apply(g, state, symbol).to.base();

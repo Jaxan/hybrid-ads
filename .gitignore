@@ -1,4 +1,5 @@
 *.dot
 *.png
-*dist_seq
+*.pdf
+*_seq
 *splitting_tree
