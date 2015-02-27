@@ -40,6 +40,6 @@ struct splijtboom;
 void write_splitting_tree_to_dot(const splijtboom & root, std::ostream & out);
 void write_splitting_tree_to_dot(const splijtboom & root, std::string const & filename);
 
-struct dist_seq;
-void write_adaptive_distinguishing_sequence_to_dot(const dist_seq & root, std::ostream & out);
-void write_adaptive_distinguishing_sequence_to_dot(const dist_seq & root, std::string const & filename);
+struct distinguishing_sequence;
+void write_adaptive_distinguishing_sequence_to_dot(const distinguishing_sequence & root, std::ostream & out);
+void write_adaptive_distinguishing_sequence_to_dot(const distinguishing_sequence & root, std::string const & filename);

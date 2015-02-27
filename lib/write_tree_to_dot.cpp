@@ -1,5 +1,5 @@
 #include "write_tree_to_dot.hpp"
-#include "adaptive_distinguishing_sequence.hpp"
+#include "create_adaptive_distinguishing_sequence.hpp"
 #include "splitting_tree.hpp"
 
 #include <fstream>
@@ -31,8 +31,8 @@ void write_splitting_tree_to_dot(const splijtboom& root, const string& filename)
 	write_splitting_tree_to_dot(root, file);
 }
 
-void write_adaptive_distinguishing_sequence_to_dot(const dist_seq & root, ostream & out){
-	write_tree_to_dot(root, [](const dist_seq & node, ostream& out){
+void write_adaptive_distinguishing_sequence_to_dot(const distinguishing_sequence & root, ostream & out){
+	write_tree_to_dot(root, [](const distinguishing_sequence & node, ostream& out){
 		if(!node.word.empty()){
 			out << node.word;
 		} else {
@@ -43,7 +43,7 @@ void write_adaptive_distinguishing_sequence_to_dot(const dist_seq & root, ostrea
 	}, out);
 }
 
-void write_adaptive_distinguishing_sequence_to_dot(const dist_seq & root, string const & filename){
+void write_adaptive_distinguishing_sequence_to_dot(const distinguishing_sequence & root, string const & filename){
 	ofstream file(filename);
 	write_adaptive_distinguishing_sequence_to_dot(root, file);
 }

@@ -1,4 +1,5 @@
 #include "create_splitting_tree.hpp"
+#include "partition.hpp"
 
 #include <functional>
 #include <numeric>

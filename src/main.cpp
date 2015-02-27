@@ -1,21 +1,20 @@
 #include <create_adaptive_distinguishing_sequence.hpp>
 #include <create_splitting_tree.hpp>
+#include <logging.hpp>
 #include <read_mealy_from_dot.hpp>
 #include <write_tree_to_dot.hpp>
-#include <logging.hpp>
 
 #include <boost/iostreams/device/file_descriptor.hpp>
-#include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
 
 #include <cassert>
-#include <iostream>
-
-#include <stack>
-#include <functional>
-#include <vector>
-#include <utility>
 #include <fstream>
+#include <functional>
+#include <iostream>
+#include <stack>
+#include <utility>
+#include <vector>
 
 using namespace std;
 
@@ -127,7 +126,7 @@ int main(int argc, char *argv[]){
 		write_splitting_tree_to_dot(splitting_tree.root, tree_filename);
 	}
 
-	const auto distinguishing_sequence = [&]{
+	const auto sequence = [&]{
 		timer t("Lee & Yannakakis II");
 		return create_adaptive_distinguishing_sequence(splitting_tree);
 	}();
@@ -135,7 +134,7 @@ int main(int argc, char *argv[]){
 	if(false){
 		timer t("writing dist sequence");
 		const string dseq_filename = splitting_tree.is_complete ? (filename + ".dist_seq") : (filename + ".incomplete_dist_seq");
-		write_adaptive_distinguishing_sequence_to_dot(distinguishing_sequence.sequence, dseq_filename);
+		write_adaptive_distinguishing_sequence_to_dot(sequence, dseq_filename);
 	}
 
 	const auto seperating_family = [&]{
@@ -144,12 +143,12 @@ int main(int argc, char *argv[]){
 		using SepSet = vector<Word>;
 		vector<SepSet> seperating_family(machine.graph_size);
 
-		stack<pair<vector<input>, reference_wrapper<const dist_seq>>> work;
-		work.push({{}, distinguishing_sequence.sequence});
+		stack<pair<vector<input>, reference_wrapper<const distinguishing_sequence>>> work;
+		work.push({{}, sequence});
 
 		while(!work.empty()){
 			auto word = work.top().first;
-			const dist_seq & node = work.top().second;
+			const distinguishing_sequence & node = work.top().second;
 			work.pop();
 
 			if(node.children.empty()){
