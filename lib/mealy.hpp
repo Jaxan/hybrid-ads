@@ -1,17 +1,10 @@
 #pragma once
 
-#include "phantom.hpp"
+#include "types.hpp"
 
 #include <map>
 #include <string>
 #include <vector>
-
-/* We use size_t's for easy indexing. But we do not want to mix states and
- * inputs. We use phantom typing to "generate" distinguished types :).
- */
-using state = phantom<size_t, struct state_tag>;
-using input = phantom<size_t, struct input_tag>;
-using output = phantom<size_t, struct output_tag>;
 
 /*
  * Structure used for reading mealy files from dot files.
@@ -20,7 +13,7 @@ using output = phantom<size_t, struct output_tag>;
  * to these size_t's. Can only represent deterministic machines,
  * but partiality still can occur.
  */
-struct Mealy {
+struct mealy {
 	struct edge {
 		state to = -1;
 		output output = -1;
@@ -39,7 +32,7 @@ struct Mealy {
 	size_t output_size = 0;
 };
 
-inline auto is_complete(const Mealy & m){
+inline auto is_complete(const mealy & m){
 	for(state n = 0; n < m.graph_size; ++n){
 		if(m.graph[n.base()].size() != m.input_size) return false;
 		for(auto && e : m.graph[n.base()]) if(e.to == -1 || e.output == -1) return false;
@@ -47,13 +40,13 @@ inline auto is_complete(const Mealy & m){
 	return true;
 }
 
-inline auto apply(Mealy const & m, state state, input input){
+inline auto apply(mealy const & m, state state, input input){
 	return m.graph[state.base()][input.base()];
 }
 
 template <typename Iterator>
-auto apply(Mealy const & m, state state, Iterator b, Iterator e){
-	Mealy::edge ret;
+auto apply(mealy const & m, state state, Iterator b, Iterator e){
+	mealy::edge ret;
 	while(b != e){
 		ret = apply(m, state, *b++);
 		state = ret.to;

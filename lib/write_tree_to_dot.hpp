@@ -36,10 +36,10 @@ void write_tree_to_dot(const T & tree, NodeString && node_string, std::ostream &
 
 
 // Specialized printing for splitting trees and dist seqs
-struct splijtboom;
-void write_splitting_tree_to_dot(const splijtboom & root, std::ostream & out);
-void write_splitting_tree_to_dot(const splijtboom & root, std::string const & filename);
+struct splitting_tree;
+void write_splitting_tree_to_dot(const splitting_tree & root, std::ostream & out);
+void write_splitting_tree_to_dot(const splitting_tree & root, std::string const & filename);
 
-struct distinguishing_sequence;
-void write_adaptive_distinguishing_sequence_to_dot(const distinguishing_sequence & root, std::ostream & out);
-void write_adaptive_distinguishing_sequence_to_dot(const distinguishing_sequence & root, std::string const & filename);
+struct adaptive_distinguishing_sequence;
+void write_adaptive_distinguishing_sequence_to_dot(const adaptive_distinguishing_sequence & root, std::ostream & out);
+void write_adaptive_distinguishing_sequence_to_dot(const adaptive_distinguishing_sequence & root, std::string const & filename);

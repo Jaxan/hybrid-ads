@@ -2,27 +2,24 @@
 
 #include "mealy.hpp"
 
-#include <numeric>
-#include <type_traits>
-#include <vector>
+/*
+ * A splitting tree as defined in Lee & Yannakakis. The structure is also
+ * called a derivation tree in Knuutila. Both the classical Hopcroft algorithm
+ * and the Lee & Yannakakis algorithm produce splitting trees.
+ */
 
-struct splijtboom {
-	splijtboom(size_t N, size_t depth)
-	: states(N)
-	, depth(depth)
-	{
-		std::iota(begin(states), end(states), 0);
-	}
+struct splitting_tree {
+	splitting_tree(size_t N, size_t depth);
 
 	std::vector<state> states;
-	std::vector<splijtboom> children;
+	std::vector<splitting_tree> children;
 	std::vector<input> seperator;
 	size_t depth = 0;
 	mutable int mark = 0; // used for some algorithms...
 };
 
 template <typename Fun>
-void lca_impl1(splijtboom const & node, Fun && f){
+void lca_impl1(splitting_tree const & node, Fun && f){
 	node.mark = 0;
 	if(!node.children.empty()){
 		for(auto && c : node.children){
@@ -36,24 +33,57 @@ void lca_impl1(splijtboom const & node, Fun && f){
 	}
 }
 
-inline splijtboom & lca_impl2(splijtboom & node){
-	if(node.mark > 1) return node;
-	for(auto && c : node.children){
-		if(c.mark > 0) return lca_impl2(c);
-	}
-	return node; // this is a leaf
-}
+splitting_tree & lca_impl2(splitting_tree & node);
 
 template <typename Fun>
-splijtboom & lca(splijtboom & root, Fun && f){
+splitting_tree & lca(splitting_tree & root, Fun && f){
 	static_assert(std::is_same<decltype(f(0)), bool>::value, "f should return a bool");
 	lca_impl1(root, f);
 	return lca_impl2(root);
 }
 
 template <typename Fun>
-const splijtboom & lca(const splijtboom & root, Fun && f){
+const splitting_tree & lca(const splitting_tree & root, Fun && f){
 	static_assert(std::is_same<decltype(f(0)), bool>::value, "f should return a bool");
 	lca_impl1(root, f);
-	return lca_impl2(const_cast<splijtboom&>(root));
+	return lca_impl2(const_cast<splitting_tree&>(root));
 }
+
+
+/*
+ * The algorithm to create a splitting tree can be altered in some ways. This
+ * struct provides options to the algorithm. There are two common setups.
+ */
+
+struct options {
+	bool check_validity = true;
+	bool cache_succesors = true;
+};
+
+constexpr options lee_yannakakis_style{true, true};
+constexpr options hopcroft_style{false, false};
+
+
+/*
+ * The algorithm to create a splitting tree also produces some other useful
+ * data. This struct captures exactly that.
+ */
+
+struct result {
+	result(size_t N)
+	: root(N, 0)
+	, successor_cache()
+	, is_complete(true)
+	{}
+
+	// The splitting tree as described in Lee & Yannakakis
+	splitting_tree root;
+
+	// Encodes f_u : depth -> state -> state, where only the depth of u is of importance
+	std::vector<std::vector<state>> successor_cache;
+
+	// false <-> no adaptive distinguishing sequence
+	bool is_complete;
+};
+
+result create_splitting_tree(mealy const & m, options opt);

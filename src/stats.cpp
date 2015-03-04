@@ -1,7 +1,6 @@
 #include <read_mealy_from_dot.hpp>
 #include <mealy.hpp>
 
-#include <string>
 #include <fstream>
 #include <iostream>
 

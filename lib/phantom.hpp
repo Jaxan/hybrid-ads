@@ -1,6 +1,7 @@
 #pragma once
 
 #include <boost/operators.hpp>
+
 #include <iosfwd>
 
 template <typename Base, typename T>

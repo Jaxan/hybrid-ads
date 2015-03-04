@@ -1,12 +1,28 @@
-#include "create_splitting_tree.hpp"
+#include "splitting_tree.hpp"
 #include "partition.hpp"
 
+#include <cassert>
 #include <functional>
 #include <numeric>
 #include <queue>
 #include <utility>
 
 using namespace std;
+
+splitting_tree::splitting_tree(size_t N, size_t depth)
+: states(N)
+, depth(depth)
+{
+	iota(begin(states), end(states), 0);
+}
+
+splitting_tree &lca_impl2(splitting_tree & node){
+	if(node.mark > 1) return node;
+	for(auto && c : node.children){
+		if(c.mark > 0) return lca_impl2(c);
+	}
+	return node; // this is a leaf
+}
 
 template <typename T>
 std::vector<T> concat(std::vector<T> const & l, std::vector<T> const & r){
@@ -16,7 +32,7 @@ std::vector<T> concat(std::vector<T> const & l, std::vector<T> const & r){
 	return ret;
 }
 
-result create_splitting_tree(const Mealy& g, options opt){
+result create_splitting_tree(const mealy& g, options opt){
 	const auto N = g.graph.size();
 	const auto P = g.input_indices.size();
 	const auto Q = g.output_indices.size();
@@ -30,12 +46,12 @@ result create_splitting_tree(const Mealy& g, options opt){
 	 * tree. We keep track of how many times we did no work. If this is too
 	 * much, there is no complete splitting tree.
 	 */
-	queue<reference_wrapper<splijtboom>> work;
+	queue<reference_wrapper<splitting_tree>> work;
 	size_t days_without_progress = 0;
 
 	// Some lambda functions capturing some state, makes the code a bit easier :)
 	const auto add_push_new_block = [&work](auto new_blocks, auto & boom) {
-		boom.children.assign(new_blocks.size(), splijtboom(0, boom.depth + 1));
+		boom.children.assign(new_blocks.size(), splitting_tree(0, boom.depth + 1));
 
 		auto i = 0;
 		for(auto && b : new_blocks){
@@ -69,7 +85,7 @@ result create_splitting_tree(const Mealy& g, options opt){
 	// We'll start with the root, obviously
 	work.push(root);
 	while(!work.empty()){
-		splijtboom & boom = work.front();
+		splitting_tree & boom = work.front();
 		work.pop();
 		const auto depth = boom.depth;
 

@@ -14,8 +14,8 @@ T get(istream& in){
 	return t;
 }
 
-Mealy read_mealy_from_dot(istream& in){
-	Mealy m;
+mealy read_mealy_from_dot(istream& in){
+	mealy m;
 
 	string line;
 	stringstream ss;
@@ -57,7 +57,7 @@ Mealy read_mealy_from_dot(istream& in){
 	return m;
 }
 
-Mealy read_mealy_from_dot(const string& filename){
+mealy read_mealy_from_dot(const string& filename){
 	ifstream file(filename);
 	return read_mealy_from_dot(file);
 }

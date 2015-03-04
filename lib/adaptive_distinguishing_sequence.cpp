@@ -1,5 +1,4 @@
-#include "create_adaptive_distinguishing_sequence.hpp"
-#include "create_splitting_tree.hpp"
+#include "adaptive_distinguishing_sequence.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -8,18 +7,26 @@
 
 using namespace std;
 
-distinguishing_sequence create_adaptive_distinguishing_sequence(const result & splitting_tree){
+adaptive_distinguishing_sequence::adaptive_distinguishing_sequence(size_t N, size_t depth)
+: CI(N)
+, depth(depth)
+{
+	for(size_t i = 0; i < N; ++i)
+		CI[i] = {i, i};
+}
+
+adaptive_distinguishing_sequence create_adaptive_distinguishing_sequence(const result & splitting_tree){
 	const auto & root = splitting_tree.root;
 	const auto & succession = splitting_tree.successor_cache;
 	const auto N = root.states.size();
 
-	distinguishing_sequence sequence(N, 0);
+	adaptive_distinguishing_sequence sequence(N, 0);
 
-	queue<reference_wrapper<distinguishing_sequence>> work;
+	queue<reference_wrapper<adaptive_distinguishing_sequence>> work;
 	work.push(sequence);
 
 	while(!work.empty()){
-		distinguishing_sequence & node = work.front();
+		adaptive_distinguishing_sequence & node = work.front();
 		work.pop();
 
 		if(node.CI.size() < 2) continue;
@@ -37,7 +44,7 @@ distinguishing_sequence create_adaptive_distinguishing_sequence(const result & s
 
 		node.word = oboom.seperator;
 		for(auto && c : oboom.children){
-			distinguishing_sequence new_c(0, node.depth + 1);
+			adaptive_distinguishing_sequence new_c(0, node.depth + 1);
 
 			size_t i = 0;
 			size_t j = 0;
