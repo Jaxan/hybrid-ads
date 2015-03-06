@@ -64,21 +64,52 @@ vector<vector<string>> open_suite(string suite_filename){
 }
 
 int main(int argc, char *argv[]){
-	if(argc != 3) return 1;
+	const size_t N = 136;
+	vector< pair<mealy, vector<string>> > machines_and_maps(N);
+	vector< vector<vector<string>>      > suites(N);
+	for(int i = 0; i < N; ++i){
+		cout << "reading " << i << "\r" << flush;
 
-	const auto spec = read_mealy_from_dot(argv[1]);
-	const auto spec_o_map = create_reverse_map(spec.output_indices);
+		const string filename = "hyp." + to_string(i) + ".obf.dot";
+		machines_and_maps[i].first = read_mealy_from_dot(filename);
+		machines_and_maps[i].second = create_reverse_map(machines_and_maps[i].first.output_indices);
 
-	const auto impl = read_mealy_from_dot(argv[2]);
-	const auto impl_o_map = create_reverse_map(impl.output_indices);
-
-	const auto suite = open_suite(argv[1] + string("test_suite"));
-
-	const auto counter_example = conform(spec, spec_o_map, impl, impl_o_map, suite);
-	if(counter_example.empty()){
-		cerr << "No counter example found" << endl;
+		const string suite_filename = filename + "test_suite";
+		suites[i] = open_suite(suite_filename);
 	}
-	for(auto && i : counter_example) cout << i << ' ';
-	cout << endl;
+	cout << "done reading" << endl;
+
+	const string red = "\x1b[31m";
+	const string yellow = "\x1b[33m";
+	const string cyan = "\x1B[36m";
+	const string reset = "\033[0m";
+
+	size_t fails = 0;
+	for(int i = 0; i < N; ++i){
+		for(int j = 0; j < N; ++j){
+			cout << "checking " << i << " against " << j << "\r" << flush;
+			const auto & spec = machines_and_maps[i];
+			const auto & impl = machines_and_maps[j];
+			const auto & suite = suites[i];
+			const auto result = conform(spec.first, spec.second, impl.first, impl.second, suite);
+
+			if(i == j && !result.empty()){
+				cout << cyan << "FAIL: " << i << " " << j << " is the same machine" << reset << endl;
+				fails++;
+			}
+
+			if(i < j && result.empty()){
+				cout << red << "FAIL: " << i << " " << j << " no flaw detected" << reset << endl;
+				fails++;
+			}
+
+			if(i > j && result.empty()){
+				cout << yellow << "FAIL: " << i << " " << j << " no flaw detected" << reset << endl;
+				fails++;
+			}
+		}
+	}
+	cout << "done checking" << endl;
+	cout << "total of " << fails << " fails out of " << N*N << endl;
 }
 

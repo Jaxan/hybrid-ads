@@ -47,10 +47,15 @@ std::vector<std::vector<T>> all_seqs(T min, T max, std::vector<std::vector<T>> c
 int main(int argc, char *argv[]){
 	if(argc != 2) return 1;
 	const string filename = argv[1];
+	const bool use_stdio = filename == "--";
 
 	const auto machine = [&]{
 		timer t("reading file " + filename);
-		return read_mealy_from_dot(filename);
+		if(use_stdio){
+			return read_mealy_from_dot(cin);
+		} else {
+			return read_mealy_from_dot(filename);
+		}
 	}();
 
 	auto all_pair_seperating_sequences_fut = async([&]{
@@ -96,7 +101,6 @@ int main(int argc, char *argv[]){
 
 	const auto transfer_sequences = transfer_sequences_fut.get();
 	const auto inputs = create_reverse_map(machine.input_indices);
-	const auto outputs = create_reverse_map(machine.output_indices);
 
 	{
 		timer t("making test suite");
@@ -119,16 +123,13 @@ int main(int argc, char *argv[]){
 			return seq2;
 		});
 
-//		for(auto && test : real_suite) {
-//			for(auto && s : test) {
-//				cout << s << " ";
-//			}
-//			cout << endl;
-//		}
-
 		boost::iostreams::filtering_ostream compressed_stream;
 		compressed_stream.push(boost::iostreams::gzip_compressor());
-		compressed_stream.push(boost::iostreams::file_descriptor_sink("test_suite"));
+		if(use_stdio){
+			compressed_stream.push(cout);
+		} else {
+			compressed_stream.push(boost::iostreams::file_descriptor_sink(filename + "test_suite"));
+		}
 
 		boost::archive::text_oarchive archive(compressed_stream);
 		archive << real_suite;

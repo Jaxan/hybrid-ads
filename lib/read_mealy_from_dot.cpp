@@ -20,6 +20,8 @@ mealy read_mealy_from_dot(istream& in){
 	string line;
 	stringstream ss;
 	while(getline(in, line)){
+		if(line.find("}") != string::npos) return m;
+
 		const auto i = line.find("->");
 		if(i == string::npos) continue;
 
