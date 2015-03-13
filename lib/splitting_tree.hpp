@@ -13,7 +13,7 @@ struct splitting_tree {
 
 	std::vector<state> states;
 	std::vector<splitting_tree> children;
-	std::vector<input> seperator;
+	word seperator;
 	size_t depth = 0;
 	mutable int mark = 0; // used for some algorithms...
 };

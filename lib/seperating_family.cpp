@@ -1,5 +1,8 @@
 #include "seperating_family.hpp"
 
+#include <boost/range/algorithm.hpp>
+#include <boost/range/algorithm_ext/erase.hpp>
+
 #include <functional>
 #include <stack>
 #include <utility>
@@ -42,6 +45,11 @@ seperating_family create_seperating_family(const adaptive_distinguishing_sequenc
 
 		for(auto && c : node.children)
 			work.push({word, c});
+	}
+
+	// Remove duplicates
+	for(auto & vec : seperating_family){
+		boost::erase(vec, boost::unique<boost::return_found_end>(boost::sort(vec)));
 	}
 
 	return seperating_family;

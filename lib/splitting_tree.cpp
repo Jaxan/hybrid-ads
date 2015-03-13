@@ -24,14 +24,6 @@ splitting_tree &lca_impl2(splitting_tree & node){
 	return node; // this is a leaf
 }
 
-template <typename T>
-std::vector<T> concat(std::vector<T> const & l, std::vector<T> const & r){
-	std::vector<T> ret(l.size() + r.size());
-	auto it = copy(begin(l), end(l), begin(ret));
-	copy(begin(r), end(r), it);
-	return ret;
-}
-
 result create_splitting_tree(const mealy& g, options opt){
 	const auto N = g.graph.size();
 	const auto P = g.input_indices.size();

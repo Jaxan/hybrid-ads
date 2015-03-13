@@ -10,15 +10,6 @@
 using namespace std;
 
 template <typename T>
-vector<string> create_reverse_map(map<string, T> const & indices){
-	vector<string> ret(indices.size());
-	for(auto&& p : indices){
-		ret[p.second.base()] = p.first;
-	}
-	return ret;
-}
-
-template <typename T>
 vector<T> resize_new(vector<T> const & in, size_t N){
 	vector<T> ret(N);
 	copy_n(in.begin(), N, ret.begin());

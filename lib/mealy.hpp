@@ -46,10 +46,20 @@ inline auto apply(mealy const & m, state state, input input){
 
 template <typename Iterator>
 auto apply(mealy const & m, state state, Iterator b, Iterator e){
-	mealy::edge ret;
+	mealy::edge ret{state, -1};
 	while(b != e){
 		ret = apply(m, state, *b++);
 		state = ret.to;
+	}
+	return ret;
+}
+
+// Used to invert the input_indices and output_indices maps
+template <typename T>
+std::vector<std::string> create_reverse_map(std::map<std::string, T> const & indices){
+	std::vector<std::string> ret(indices.size());
+	for(auto&& p : indices){
+		ret[p.second.base()] = p.first;
 	}
 	return ret;
 }

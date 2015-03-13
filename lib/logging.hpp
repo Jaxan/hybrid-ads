@@ -34,3 +34,9 @@ struct timer{
 		return s.count();
 	}
 };
+
+// has same signature, but does not log :)
+struct silent_timer {
+	silent_timer(std::string){}
+	void stop();
+};

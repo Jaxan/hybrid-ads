@@ -1,9 +1,12 @@
 #include "read_mealy_from_dot.hpp"
 #include "mealy.hpp"
 
+#include <cassert>
 #include <fstream>
 #include <sstream>
 #include <string>
+
+#include <iostream>
 
 using namespace std;
 
@@ -56,6 +59,10 @@ mealy read_mealy_from_dot(istream& in){
 		v[m.input_indices[input].base()] = {m.nodes_indices[rh], m.output_indices[output]};
 	}
 
+	assert(m.graph_size > 0);
+	assert(m.input_size > 0);
+	assert(m.output_size > 0);
+	assert(is_complete(m));
 	return m;
 }
 
