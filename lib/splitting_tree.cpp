@@ -5,6 +5,7 @@
 #include <functional>
 #include <numeric>
 #include <queue>
+#include <random>
 #include <utility>
 
 using namespace std;
@@ -40,6 +41,12 @@ result create_splitting_tree(const mealy& g, options opt){
 	 */
 	queue<reference_wrapper<splitting_tree>> work;
 	size_t days_without_progress = 0;
+
+	/* List of inputs, will be shuffled in case of randomizations */
+	vector<input> all_inputs(g.input_size);
+	iota(begin(all_inputs), end(all_inputs), 0);
+	random_device rd;
+	mt19937 generator(rd());
 
 	// Some lambda functions capturing some state, makes the code a bit easier :)
 	const auto add_push_new_block = [&work](auto new_blocks, auto & boom) {
@@ -83,8 +90,12 @@ result create_splitting_tree(const mealy& g, options opt){
 
 		if(boom.states.size() == 1) continue;
 
+		if(opt.randomized){
+			shuffle(begin(all_inputs), end(all_inputs), generator);
+		}
+
 		// First try to split on output
-		for(input symbol = 0; symbol < P; ++symbol){
+		for(input symbol : all_inputs){
 			const auto new_blocks = partition_(begin(boom.states), end(boom.states), [symbol, depth, &g, &update_succession](state state){
 				const auto ret = apply(g, state, symbol);
 				update_succession(state, ret.to, depth);
@@ -105,7 +116,7 @@ result create_splitting_tree(const mealy& g, options opt){
 		}
 
 		// Then try to split on state
-		for(input symbol = 0; symbol < P; ++symbol){
+		for(input symbol : all_inputs){
 			vector<bool> successor_states(N, false);
 			for(auto && state : boom.states){
 				successor_states[apply(g, state, symbol).to.base()] = true;

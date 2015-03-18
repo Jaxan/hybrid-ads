@@ -58,11 +58,13 @@ const splitting_tree & lca(const splitting_tree & root, Fun && f){
 struct options {
 	bool check_validity = true;
 	bool cache_succesors = true;
+	bool randomized = false;
 };
 
-constexpr options lee_yannakakis_style{true, true};
-constexpr options hopcroft_style{false, false};
-
+constexpr options lee_yannakakis_style{true, true, false};
+constexpr options hopcroft_style{false, false, false};
+constexpr options randomized_lee_yannakakis_style{true, true, true};
+constexpr options randomized_hopcroft_style{false, false, true};
 
 /*
  * The algorithm to create a splitting tree also produces some other useful

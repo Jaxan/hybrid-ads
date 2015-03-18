@@ -33,6 +33,11 @@ int main(int argc, char *argv[]){
 	const bool statistics = mode == "stats";
 	const bool compress_suite = mode == "compr";
 
+	const bool use_relevances = true;
+	const bool randomize_prefixes = true;
+	const bool randomize_hopcroft = true;
+	const bool randomize_lee_yannakakis = true;
+
 	const auto machine = [&]{
 		time_logger t("reading file " + filename);
 		if(use_stdio){
@@ -45,7 +50,7 @@ int main(int argc, char *argv[]){
 	auto all_pair_seperating_sequences_fut = async([&]{
 		const auto splitting_tree_hopcroft = [&]{
 			time_logger t("creating hopcroft splitting tree");
-			return create_splitting_tree(machine, hopcroft_style);
+			return create_splitting_tree(machine, randomize_hopcroft ? randomized_hopcroft_style : hopcroft_style);
 		}();
 
 		const auto all_pair_seperating_sequences = [&]{
@@ -59,7 +64,7 @@ int main(int argc, char *argv[]){
 	auto sequence_fut = async([&]{
 		const auto splitting_tree = [&]{
 			time_logger t("Lee & Yannakakis I");
-			return create_splitting_tree(machine, lee_yannakakis_style);
+			return create_splitting_tree(machine, randomize_lee_yannakakis ? randomized_lee_yannakakis_style : lee_yannakakis_style);
 		}();
 
 		const auto sequence = [&]{
@@ -72,7 +77,11 @@ int main(int argc, char *argv[]){
 
 	auto transfer_sequences_fut = std::async([&]{
 		time_logger t("determining transfer sequences");
-		return create_transfer_sequences(machine, 0);
+		if(randomize_prefixes){
+			return create_randomized_transfer_sequences(machine, 0);
+		} else {
+			return create_transfer_sequences(machine, 0);
+		}
 	});
 
 	auto inputs_fut = std::async([&]{
@@ -84,11 +93,13 @@ int main(int argc, char *argv[]){
 		vector<discrete_distribution<input>> distributions(machine.graph_size);
 
 		for(state s = 0; s < machine.graph_size; ++s){
-			vector<double> r_cache(machine.input_size, 0);
-			for(input i = 0; i < machine.input_size; ++i){
-				const auto test1 = apply(machine, s, i).output != machine.output_indices.at("quiescence");
-				const auto test2 = apply(machine, s, i).to != s;
-				r_cache[i.base()] = test1 + test2;
+			vector<double> r_cache(machine.input_size, 1);
+			if(use_relevances){
+				for(input i = 0; i < machine.input_size; ++i){
+					//const auto test1 = apply(machine, s, i).output != machine.output_indices.at("quiescence");
+					const auto test2 = apply(machine, s, i).to != s;
+					r_cache[i.base()] = 0.1 + test2;
+				}
 			}
 
 			distributions[s.base()] = discrete_distribution<input>(begin(r_cache), end(r_cache));
@@ -185,7 +196,7 @@ int main(int argc, char *argv[]){
 		std::mt19937 generator(rd());
 
 		uniform_int_distribution<size_t> prefix_selection(0, transfer_sequences.size());
-		uniform_int_distribution<> fair_coin(0, 1);
+		uniform_int_distribution<> unfair_coin(0, 2); // expected flips is p / (p-1)^2, where p is succes probability
 		uniform_int_distribution<size_t> suffix_selection;
 		auto relevant_inputs = relevant_inputs_fut.get();
 
@@ -200,7 +211,7 @@ int main(int argc, char *argv[]){
 			vector<input> m;
 			m.reserve(k_max + 2);
 			size_t minimal_size = k_max + 1;
-			while(minimal_size || fair_coin(generator)){
+			while(minimal_size || unfair_coin(generator)){
 				input i = relevant_inputs[current_state.base()](generator);
 				m.push_back(i);
 				current_state = apply(machine, current_state, i).to;
