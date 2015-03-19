@@ -34,7 +34,9 @@ int main(int argc, char *argv[]){
 	if(argc != 2) return 1;
 	const string filename = argv[1];
 
-	const auto machine = read_mealy_from_dot(filename);
+	const auto result = read_mealy_from_dot(filename);
+	const auto & machine = result.first;
+	const auto & translation = result.second;
 
 //	vector<vector<bool>> table(machine.input_size);
 //	for(input i = 0; i < machine.input_size; ++i){
@@ -45,7 +47,7 @@ int main(int argc, char *argv[]){
 	for(state s = 0; s < machine.graph_size; ++s){
 		size_t scores[3] = {0, 0, 0};
 		for(input i = 0; i < machine.input_size; ++i){
-			const auto test1 = apply(machine, s, i).output != machine.output_indices.at("quiescence");
+			const auto test1 = apply(machine, s, i).output != translation.output_indices.at("quiescence");
 			const auto test2 = apply(machine, s, i).to != s;
 
 			scores[test1 + test2]++;

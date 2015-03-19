@@ -27,8 +27,8 @@ splitting_tree &lca_impl2(splitting_tree & node){
 
 result create_splitting_tree(const mealy& g, options opt){
 	const auto N = g.graph.size();
-	const auto P = g.input_indices.size();
-	const auto Q = g.output_indices.size();
+	const auto P = g.input_size;
+	const auto Q = g.output_size;
 
 	result r(N);
 	auto & root = r.root;

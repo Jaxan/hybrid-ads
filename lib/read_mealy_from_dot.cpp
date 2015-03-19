@@ -17,13 +17,16 @@ T get(istream& in){
 	return t;
 }
 
-mealy read_mealy_from_dot(istream& in){
+mealy read_mealy_from_dot(std::istream & in, translation & t){
 	mealy m;
+
+	std::map<std::string, state> state_indices;
+	state max_state = 0;
 
 	string line;
 	stringstream ss;
 	while(getline(in, line)){
-		if(line.find("}") != string::npos) return m;
+		if(line.find("}") != string::npos) break;
 
 		const auto i = line.find("->");
 		if(i == string::npos) continue;
@@ -47,17 +50,21 @@ mealy read_mealy_from_dot(istream& in){
 		const auto output = get<string>(ss);
 
 		// make fresh indices, if needed
-		if(m.nodes_indices.count(lh) < 1) m.nodes_indices[lh] = m.graph_size++;
-		if(m.nodes_indices.count(rh) < 1) m.nodes_indices[rh] = m.graph_size++;
-		if(m.input_indices.count(input) < 1) m.input_indices[input] = m.input_size++;
-		if(m.output_indices.count(output) < 1) m.output_indices[output] = m.output_size++;
+		if(state_indices.count(lh) < 1) state_indices[lh] = max_state++;
+		if(state_indices.count(rh) < 1) state_indices[rh] = max_state++;
+		if(t.input_indices.count(input) < 1) t.input_indices[input] = t.max_input++;
+		if(t.output_indices.count(output) < 1) t.output_indices[output] = t.max_output++;
 
 		// add edge
-		m.graph.resize(m.graph_size);
-		auto & v = m.graph[m.nodes_indices[lh].base()];
-		v.resize(m.input_size);
-		v[m.input_indices[input].base()] = {m.nodes_indices[rh], m.output_indices[output]};
+		m.graph.resize(max_state.base());
+		auto & v = m.graph[state_indices[lh].base()];
+		v.resize(t.max_input.base());
+		v[t.input_indices[input].base()] = {state_indices[rh], t.output_indices[output]};
 	}
+
+	m.graph_size = max_state.base();
+	m.input_size = t.max_input.base();
+	m.output_size = t.max_output.base();
 
 	assert(m.graph_size > 0);
 	assert(m.input_size > 0);
@@ -66,7 +73,22 @@ mealy read_mealy_from_dot(istream& in){
 	return m;
 }
 
-mealy read_mealy_from_dot(const string& filename){
+
+mealy read_mealy_from_dot(const string & filename, translation & t){
 	ifstream file(filename);
-	return read_mealy_from_dot(file);
+	return read_mealy_from_dot(file, t);
+}
+
+
+std::pair<mealy, translation> read_mealy_from_dot(istream & in){
+	translation t;
+	const auto m = read_mealy_from_dot(in, t);
+	return {move(m), move(t)};
+}
+
+
+std::pair<mealy, translation> read_mealy_from_dot(const string & filename){
+	translation t;
+	const auto m = read_mealy_from_dot(filename, t);
+	return {move(m), move(t)};
 }

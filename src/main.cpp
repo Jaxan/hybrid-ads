@@ -38,7 +38,7 @@ int main(int argc, char *argv[]){
 	const bool randomize_hopcroft = true;
 	const bool randomize_lee_yannakakis = true;
 
-	const auto machine = [&]{
+	const auto machine_and_translation = [&]{
 		time_logger t("reading file " + filename);
 		if(use_stdio){
 			return read_mealy_from_dot(cin);
@@ -46,6 +46,9 @@ int main(int argc, char *argv[]){
 			return read_mealy_from_dot(filename);
 		}
 	}();
+
+	const auto & machine = machine_and_translation.first;
+	const auto & translation = machine_and_translation.second;
 
 	auto all_pair_seperating_sequences_fut = async([&]{
 		const auto splitting_tree_hopcroft = [&]{
@@ -85,7 +88,7 @@ int main(int argc, char *argv[]){
 	});
 
 	auto inputs_fut = std::async([&]{
-		return create_reverse_map(machine.input_indices);
+		return create_reverse_map(translation.input_indices);
 	});
 
 	auto relevant_inputs_fut = std::async([&]{
@@ -191,6 +194,7 @@ int main(int argc, char *argv[]){
 
 	if(random_part){
 		time_logger t("outputting all random tests");
+		cerr << "*** K > " << k_max << endl;
 
 		std::random_device rd;
 		std::mt19937 generator(rd());

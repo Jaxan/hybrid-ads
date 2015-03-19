@@ -1,6 +1,9 @@
+.DS_Store
+
 *.dot
 *.png
 *.pdf
 *_seq
 *splitting_tree
 *test_suite
+
