@@ -7,6 +7,7 @@ still useful for generating a seperating set (in the sense of Lee and
 Yannakakis). The partial leaves will be augmented via the classical
 seperating sequences.
 
+
 ## Building
 
 ```
@@ -21,3 +22,8 @@ executable in the build directory. Note that you'll need c++14, but clang in
 Mac OSX will understand that (and if not, you'll have to update Xcode).
 
 
+## Java
+
+For now the java code, which acts as a bridge between LearnLib and this c++ 
+tool, is included here. But it should earn its own repo at some point. Also, my 
+javanese is a bit rusty...
