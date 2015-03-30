@@ -1,0 +1,168 @@
+\documentclass[envcountsame]{llncs}
+
+\usepackage{amsmath}
+\usepackage[backgroundcolor=white]{todonotes}
+
+\newcommand{\Def}[1]{\emph{#1}}
+\newcommand{\bigO}{\mathcal{O}}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+
+Recently automata learning has gained popularity. Learning algorithms are
+applied to real world systems (systems under learning, or SUL for short) and
+this shows some problems.
+
+In the classical active learning algorithms such as $L^\ast$ one supposes a
+teacher to which the algorithm can ask \Def{membership queries} and \Def{
+equivalence queries}. In the former case the algorithms asks the teacher for the
+output (sequence) for a given input sequence. In the latter case the algorithm
+provides the teacher with a hypothesis and the teacher answers with either an
+input sequence on which the hypothesis behaves differently than the SUL or
+answers affirmatively in the case the machines are behaviorally equivalent.
+
+In real world applications we have to implement the teacher ourselves, despite
+the fact that we do not know all the details of the SUL. The membership queries
+are easily implemented by resetting the machine and applying the input. The
+equivalence queries, however, are often impossible to implement. Instead, we
+have to resort to some sort of random testing. Doing random testing naively is
+of course hopeless, as the state space is often too big. Luckily we we have a
+hypothesis at hand, we can use for model based testing.
+
+One standard framework for model based testing is pioneered by Chow and
+Vasilevski. Briefly, the framework supposes prefix sequences which allows us to
+go from the initial state to a given state $s$ (in the model) or even a given
+transition $t \to s$, and suffix sequences which test whether the machine
+actually is in state $s$. If we have the right suffixes and test every
+transition of the model, we can ensure that the SUL is either equivalent or has
+strictly more states. Such a test suite can be constructed with a size
+polynomially in the number of states of the model. This is contrary to
+exhaustive testing or (naive) random testing, where there are exponentially many
+sequences.
+
+For the prefixes we can use any single source shortest path algorithm. In fact,
+if we restrict ourselves to the above framework, this is the best we can do.
+This gives $n$ sequences of length at most $n-1$ (in fact the total sum is at
+most $\frac{1}{2}n(n-1)$).
+
+For the suffixes, we can use the standard Hopcroft algorithm to generate
+seperating sequences. If we want to test a given state $s$, we take the set of
+suffixes (we allow the set of suffixes to depend on the state we want to test)
+to be all seperating sequences for all other states $t$. This set has at most $n
+-1$ elements of at most length $n$, again the total sum is $\frac{1}{2}n(n-1)$.
+A natural question arises: can we do better?
+
+In the presence of a distinguishing sequence, Lee and Yannakakis prove that one
+can take a set of suffixes of just $1$ element of at most length $\frac{1}{2}n(n
+-1)$. This does not provide an improvement in the worst case scenario. Even
+worse, such a sequence might not exist.
+
+In this paper we propose a testing algorithm which combines the two methods
+described above. The distinguishing sequence might not exist, but the tree
+constructed during the Lee and Yannakakis provides a lot of information which we
+can complement with the classical Hopcroft approach. Despite the fact that this
+is not an improvement in the worst case scenario, this hybrid method enabled us
+to learn an industrial grade machine, which was infeasible to learn with the
+standard methods provided by LearnLib.
+
+
+\section{Preliminaries}
+
+We restrict our attention to \Def{Mealy machines}. Let $I$ (resp. $O$) denote
+the finite set of inputs (resp. outputs). Then a Mealy machine $M$ consists of a
+set of states $S$ with a initial states $s_0$, together with a transition
+function $\delta : I \times S \to S$ and an output function $\lambda : I \times
+S \to O$. Note that we assume machines to be deterministic and total. We also
+assume that our system under learning is a Mealy machine. Both functions $\delta
+$ and $\lambda$ are extended to words in $I^\ast$.
+
+We are in the context of learning, so we will generally denote the hypothesis by
+$H$ and the system under learning by $SUL$. Note that we can assume $H$ to be
+minimal and reachable.
+
+We assume that the alphabets $I$ and $O$ are fixed in these notes.
+\begin{definition}
+	A \Def{set of words $X$ (over $I$)} is a subset $X \subset I^\ast$.
+
+	Given a set of states $S$, then a \Def{family of sets $X$ (over $I$)} is a
+	collection $X = \{X_s\}_{s \in S}$ where each $X_s$ is a set of words.
+\end{definition}
+
+All words we will consider are over $I$, so we will refer to them as simply
+words. The idea of a family of sets was also introduced by Fujiwara. They are
+used to collect sequences which are relevant for a certain state. We define
+some operations on sets and families:
+\newcommand{\tensor}{\otimes}
+\begin{itemize}
+	\item Let $X$ and $Y$ be two sets of words over $I$, then $X \cdot Y$ is the
+	set of all concatenations: $X \cdot Y = \{ x y \,|\, x \in X, y \in Y \}$.
+	\item Let $X^n = X \cdots X$ denote the iterated concatenation and $X^{\leq k}
+	= \bigcup_{n \leq k} X^n$ all concatenations of at most length $k$.
+	In particular $I^n$ are all words of length
+	precisely $n$ and $I^{\leq k}$ are all words of length at most $k$.
+	\item Let $X = \{ X_s \}_{s \in S}$ and $Y = \{ Y_s \}_{s \in S}$ be two
+	families of sets. We define a new family of	words $X \tensor_H Y$ as
+	$(X \tensor_H Y)_s = \{ x y \,|\, x \in X_s, y \in Y_{\delta(s, x)} \}$.
+	Note that this depends on the transitions in the machine $H$.
+	\item Let $X$ be a family and $Y$ just a set of words,
+	then the usual concatenation is defined as $(X \cdot Y)_s = X_s \cdot Y$.
+	\item Let $X$ be a family of sets, then the union $\bigcup X$ forms a set
+	of words.
+\end{itemize}
+
+Let $H$ be a fixed machine and let $\tensor$ denote $\tensor_H$. We define some
+useful sets (which depend on $H$):
+\begin{itemize}
+	\item The set of prefixes $P_s = \{ x \,|\, \text{a shortest } x \text{ such
+	that } \delta(s, x) = t, t \in S \}$. Note that $P_{s_0}$ is particularly
+	interesting. These sets can be constructed by any shortest path algorithm.
+	Note that $P \cdot I$ is a set covering all transitions in $H$.
+	\item The set $W_s = \{ x \,|\, x \text{ seperates } s \text{ and } t, t \in
+	S\}$. This can be constructed using Hopcroft's algorithm or Gill's algorithm
+	if one wants minimal separating sequences.
+	\item If $x$ is an adaptive distinguishing sequence in the sense of Lee and
+	Yannakakis, and let $x_s$ denote the associated UIO for state $x$, we
+	define $Z_s = \{ x_s \}$.
+\end{itemize}
+
+We obtain different methods (note that all test suites are expressed as families
+of sets $X$, the actual test suite is $X_{s_0}$):
+\begin{itemize}
+	\item The originial Chow and Vasilevski (W-method) test suite is given by:
+	$$ P \cdot I^{\leq k+1} \cdot \bigcup W $$
+	which distinguishes $H$ from any non-equivalent machine with at
+	most $|S| + k$ states.
+	\item The Wp-method as described by Fujiwara:
+	$$ (P \cdot I^{\leq k} \cdot \bigcup W) \cup (P \cdot I^{\leq k+1} \tensor W) $$
+	which is a smaller test suite than the W-method, but just as strong. Note
+	that the original description by Fujiwara is more detailed in order to
+	reduce redundancy.
+	\item The method proposed by Lee and Yannakakis:
+	$$ P \cdot I^{\leq k+1} \tensor Z $$
+	which is as big as the Wp-method in the worst case (if it even exists) and
+	just as strong.
+\end{itemize}
+
+An important observation is that the size of $P$, $W$ and $Z$ are polynomially
+in the number of states of $H$, but that the middle part $I^{\leq k+1}$ is
+exponential. If the numbers of states of $SUL$ is known, one can perform a (big)
+exhaustive test. In practice this is not known or has a very large bound. To
+mitigate this we can exhaust $I^{\leq 1}$ and then resort to randomly sample $I
+^\ast$. It is in this sampling phase that we want $W$ and $Z$ to contain the
+least number of elements as every element contributes to the exponential blowup.
+
+Also note that $W$ can also be constructed in different ways. For example taking
+$W_s = \{ u_s \}$, where $u_s$ is a UIO for state $s$ (assuming they all exist)
+gives valid variants of the first two methods. Also if an adaptive
+distinguishing sequence exists, all states have UIOs and we can use the first
+two methods. The third method, however, is slightly smallar as we do not need
+$\bigcup W$ in this case, because the UIOs constructed from an adaptive
+distinguishing sequence share (non-empty) prefixes.
+
+% fix from http://tex.stackexchange.com/questions/103735/list-of-todos-todonotes-is-empty-with-llncs
+\setcounter{tocdepth}{1}
+\listoftodos
+
+\end{document}
