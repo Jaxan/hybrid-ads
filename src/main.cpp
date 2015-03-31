@@ -6,20 +6,17 @@
 #include <seperating_matrix.hpp>
 #include <splitting_tree.hpp>
 #include <transfer_sequences.hpp>
-#include <partition.hpp>
-
-#include <io.hpp>
 
 #include <future>
-#include <numeric>
 #include <iomanip>
+#include <numeric>
 #include <random>
 
 using namespace std;
 
 using time_logger = silent_timer;
 
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[]) try {
 	if(argc != 4) return 1;
 	const string filename = argv[1];
 	const bool use_stdio = filename == "--";
@@ -31,9 +28,9 @@ int main(int argc, char *argv[]){
 	const bool streaming = mode == "stream";
 	const bool random_part = streaming;
 	const bool statistics = mode == "stats";
-	const bool compress_suite = mode == "compr";
 
-	const bool use_relevances = true;
+	const bool use_distinguishing_sequence = true;
+	const bool use_relevances = false;
 	const bool randomize_prefixes = true;
 	const bool randomize_hopcroft = true;
 	const bool randomize_lee_yannakakis = true;
@@ -65,14 +62,17 @@ int main(int argc, char *argv[]){
 	});
 
 	auto sequence_fut = async([&]{
-		const auto splitting_tree = [&]{
+		const auto tree = [&]{
 			time_logger t("Lee & Yannakakis I");
-			return create_splitting_tree(machine, randomize_lee_yannakakis ? randomized_lee_yannakakis_style : lee_yannakakis_style);
+			if(use_distinguishing_sequence)
+				return create_splitting_tree(machine, randomize_lee_yannakakis ? randomized_lee_yannakakis_style : lee_yannakakis_style);
+			else
+				return result(machine.graph_size);
 		}();
 
 		const auto sequence = [&]{
 			time_logger t("Lee & Yannakakis II");
-			return create_adaptive_distinguishing_sequence(splitting_tree);
+			return create_adaptive_distinguishing_sequence(tree);
 		}();
 
 		return sequence;
@@ -199,12 +199,10 @@ int main(int argc, char *argv[]){
 		std::random_device rd;
 		std::mt19937 generator(rd());
 
-		uniform_int_distribution<size_t> prefix_selection(0, transfer_sequences.size());
+		uniform_int_distribution<size_t> prefix_selection(0, transfer_sequences.size()-1);
 		uniform_int_distribution<> unfair_coin(0, 2); // expected flips is p / (p-1)^2, where p is succes probability
 		uniform_int_distribution<size_t> suffix_selection;
 		auto relevant_inputs = relevant_inputs_fut.get();
-
-		using params = uniform_int_distribution<size_t>::param_type;
 
 		while(true){
 			state current_state = 0;
@@ -222,6 +220,7 @@ int main(int argc, char *argv[]){
 				if(minimal_size) minimal_size--;
 			}
 
+			using params = uniform_int_distribution<size_t>::param_type;
 			const auto & suffixes = seperating_family[current_state.base()];
 			const auto & s = suffixes[suffix_selection(generator, params{0, suffixes.size()-1})];
 
@@ -231,34 +230,7 @@ int main(int argc, char *argv[]){
 			cout << endl;
 		}
 	}
-
-	if(compress_suite){
-		time_logger t("making test suite");
-		vector<word> suite;
-
-		for(state s = 0; s < machine.graph_size; ++s){
-			const auto prefix = transfer_sequences[s.base()];
-
-			for(auto && suffix : seperating_family[s.base()]){
-				suite.push_back(concat(prefix, suffix));
-			}
-		}
-
-		vector<vector<string>> real_suite(suite.size());
-		transform(suite.begin(), suite.end(), real_suite.begin(), [&inputs](auto const & seq){
-			vector<string> seq2(seq.size());
-			transform(seq.begin(), seq.end(), seq2.begin(), [&inputs](auto const & i){
-				return inputs[i.base()];
-			});
-			return seq2;
-		});
-
-		boost::iostreams::filtering_ostream compressed_stream;
-		compressed_stream.push(boost::iostreams::gzip_compressor());
-		compressed_stream.push(boost::iostreams::file_descriptor_sink(filename + "test_suite"));
-
-		boost::archive::text_oarchive archive(compressed_stream);
-		archive << real_suite;
-	}
+} catch (exception const & e) {
+	cerr << "Exception thrown: " << e.what() << endl;
+	return 1;
 }
-

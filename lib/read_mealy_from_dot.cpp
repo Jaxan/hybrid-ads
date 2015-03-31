@@ -1,12 +1,10 @@
 #include "read_mealy_from_dot.hpp"
 #include "mealy.hpp"
 
-#include <cassert>
 #include <fstream>
 #include <sstream>
+#include <stdexcept>
 #include <string>
-
-#include <iostream>
 
 using namespace std;
 
@@ -66,10 +64,10 @@ mealy read_mealy_from_dot(std::istream & in, translation & t){
 	m.input_size = t.max_input.base();
 	m.output_size = t.max_output.base();
 
-	assert(m.graph_size > 0);
-	assert(m.input_size > 0);
-	assert(m.output_size > 0);
-	assert(is_complete(m));
+	if(m.graph_size == 0) throw runtime_error("Empty state set");
+	if(m.input_size == 0) throw runtime_error("Empty input set");
+	if(m.output_size == 0) throw runtime_error("Empty output set");
+	if(!is_complete(m)) throw runtime_error("Partial machine");
 	return m;
 }
 
