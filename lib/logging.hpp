@@ -12,8 +12,8 @@ struct timer{
 	time begin;
 	bool active = true;
 
-	timer(std::string name)
-	: name(name)
+	timer(std::string n)
+	: name(n)
 	, begin(clock::now())
 	{
 		std::cerr << name << std::endl;

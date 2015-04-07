@@ -28,9 +28,9 @@ int main(int argc, char *argv[]){
 	// read subalphabet
 	cout << "Machine is read, please provide a subalphabet" << endl;
 	vector<input> subalphabet;
-	string i;
-	while(cin >> i){
-		const input x = translation.input_indices.at(i);
+	string in;
+	while(cin >> in){
+		const input x = translation.input_indices.at(in);
 		subalphabet.push_back(x);
 	}
 

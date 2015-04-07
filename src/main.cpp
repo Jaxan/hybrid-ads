@@ -177,7 +177,7 @@ int main(int argc, char *argv[]) try {
 		time_logger t("outputting all preset tests");
 
 		vector<word> all_sequences(1);
-		for(int k = 0; k <= k_max; ++k){
+		for(size_t k = 0; k <= k_max; ++k){
 			cerr << "*** K = " << k << endl;
 			for(state s = 0; s < machine.graph_size; ++s){
 				const auto prefix = transfer_sequences[s];

@@ -8,7 +8,7 @@
 
 using namespace std;
 
-void print_stats_for_machine(string filename){
+static void print_stats_for_machine(string filename){
 	const auto machine = read_mealy_from_dot(filename).first;
 
 	cout << "machine " << filename << " has\n";

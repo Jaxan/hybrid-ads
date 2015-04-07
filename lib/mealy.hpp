@@ -17,8 +17,8 @@
  */
 struct mealy {
 	struct edge {
-		state to = -1;
-		output output = -1;
+		state to = state(-1);
+		output output = size_t(-1);
 	};
 
 	// state -> input -> (output, state)
@@ -32,7 +32,7 @@ struct mealy {
 inline auto is_complete(const mealy & m){
 	for(state n = 0; n < m.graph_size; ++n){
 		if(m.graph[n].size() != m.input_size) return false;
-		for(auto && e : m.graph[n]) if(e.to == -1 || e.output == -1) return false;
+		for(auto && e : m.graph[n]) if(e.to == state(-1) || e.output == output(-1)) return false;
 	}
 	return true;
 }

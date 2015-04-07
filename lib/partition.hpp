@@ -13,7 +13,6 @@ auto partition_(Iterator b, Iterator e, Fun && function, size_t output_size) {
 	using T = typename decay<decltype(*b)>::type;
 
 	list<T> elements(b, e);
-	const auto s = elements.size();
 
 	list<list<T>> blocks;
 	using ref = typename list<list<T>>::iterator;

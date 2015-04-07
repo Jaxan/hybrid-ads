@@ -10,9 +10,9 @@
 
 using namespace std;
 
-splitting_tree::splitting_tree(size_t N, size_t depth)
+splitting_tree::splitting_tree(size_t N, size_t d)
 : states(N)
-, depth(depth)
+, depth(d)
 {
 	iota(begin(states), end(states), 0);
 }
@@ -26,7 +26,7 @@ splitting_tree &lca_impl2(splitting_tree & node){
 }
 
 result create_splitting_tree(const mealy& g, options opt){
-	const auto N = g.graph.size();
+	const auto N = g.graph_size;
 	const auto P = g.input_size;
 	const auto Q = g.output_size;
 
@@ -43,7 +43,7 @@ result create_splitting_tree(const mealy& g, options opt){
 	size_t days_without_progress = 0;
 
 	/* List of inputs, will be shuffled in case of randomizations */
-	vector<input> all_inputs(g.input_size);
+	vector<input> all_inputs(P);
 	iota(begin(all_inputs), end(all_inputs), 0);
 	random_device rd;
 	mt19937 generator(rd());
@@ -52,7 +52,7 @@ result create_splitting_tree(const mealy& g, options opt){
 	const auto add_push_new_block = [&work](list<list<state>> const & new_blocks, splitting_tree& boom) {
 		boom.children.assign(new_blocks.size(), splitting_tree(0, boom.depth + 1));
 
-		auto i = 0;
+		size_t i = 0;
 		for(auto && b : new_blocks){
 			boom.children[i++].states.assign(begin(b), end(b));
 		}
@@ -77,7 +77,7 @@ result create_splitting_tree(const mealy& g, options opt){
 		return true;
 	};
 	const auto update_succession = [N, &succession](state s, state t, size_t depth){
-		if(succession.size() < depth+1) succession.resize(depth+1, vector<state>(N, -1));
+		if(succession.size() < depth+1) succession.resize(depth+1, vector<state>(N, state(-1)));
 		succession[depth][s] = t;
 	};
 

@@ -17,13 +17,13 @@ ostream & operator<<(ostream& out, vector<T> const & x){
 }
 
 
-void write_splitting_tree_to_dot(const splitting_tree& root, ostream& out){
+void write_splitting_tree_to_dot(const splitting_tree& root, ostream& out_){
 	write_tree_to_dot(root, [](const splitting_tree & node, ostream& out){
 		out << node.states;
 		if(!node.seperator.empty()){
 			out << "\\n" << node.seperator;
 		}
-	}, out);
+	}, out_);
 }
 
 void write_splitting_tree_to_dot(const splitting_tree& root, const string& filename){
@@ -31,7 +31,7 @@ void write_splitting_tree_to_dot(const splitting_tree& root, const string& filen
 	write_splitting_tree_to_dot(root, file);
 }
 
-void write_adaptive_distinguishing_sequence_to_dot(const adaptive_distinguishing_sequence & root, ostream & out){
+void write_adaptive_distinguishing_sequence_to_dot(const adaptive_distinguishing_sequence & root, ostream & out_){
 	write_tree_to_dot(root, [](const adaptive_distinguishing_sequence & node, ostream& out){
 		if(!node.word.empty()){
 			out << node.word;
@@ -40,7 +40,7 @@ void write_adaptive_distinguishing_sequence_to_dot(const adaptive_distinguishing
 			transform(begin(node.CI), end(node.CI), begin(I), [](const pair<state, state> p){ return p.second; });
 			out << "I = " << I;
 		}
-	}, out);
+	}, out_);
 }
 
 void write_adaptive_distinguishing_sequence_to_dot(const adaptive_distinguishing_sequence & root, string const & filename){
