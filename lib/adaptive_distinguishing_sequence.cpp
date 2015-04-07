@@ -33,11 +33,11 @@ adaptive_distinguishing_sequence create_adaptive_distinguishing_sequence(const r
 
 		vector<bool> states(N, false);
 		for(auto && state : node.CI){
-			states[state.first.base()] = true;
+			states[state.first] = true;
 		}
 
 		const auto & oboom = lca(root, [&states](state state) -> bool{
-			return states[state.base()];
+			return states[state];
 		});
 
 		if(oboom.children.empty()) continue;
@@ -55,7 +55,7 @@ adaptive_distinguishing_sequence create_adaptive_distinguishing_sequence(const r
 				} else if(node.CI[i].first > c.states[j]) {
 					j++;
 				} else {
-					const auto curr = succession[oboom.depth][node.CI[i].first.base()];
+					const auto curr = succession[oboom.depth][node.CI[i].first];
 					const auto init = node.CI[i].second;
 					new_c.CI.push_back({curr, init});
 					i++;

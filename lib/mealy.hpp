@@ -31,22 +31,22 @@ struct mealy {
 
 inline auto is_complete(const mealy & m){
 	for(state n = 0; n < m.graph_size; ++n){
-		if(m.graph[n.base()].size() != m.input_size) return false;
-		for(auto && e : m.graph[n.base()]) if(e.to == -1 || e.output == -1) return false;
+		if(m.graph[n].size() != m.input_size) return false;
+		for(auto && e : m.graph[n]) if(e.to == -1 || e.output == -1) return false;
 	}
 	return true;
 }
 
 inline auto apply(mealy const & m, state state, input input){
-	return m.graph[state.base()][input.base()];
+	return m.graph[state][input];
 }
 
 template <typename Iterator>
 auto apply(mealy const & m, state state, Iterator b, Iterator e){
-	mealy::edge ret{state, -1};
+	mealy::edge ret;
+	ret.to = state;
 	while(b != e){
-		ret = apply(m, state, *b++);
-		state = ret.to;
+		ret = apply(m, ret.to, *b++);
 	}
 	return ret;
 }

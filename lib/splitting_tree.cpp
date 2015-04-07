@@ -68,7 +68,7 @@ result create_splitting_tree(const mealy& g, options opt){
 
 		for(auto && block : blocks) {
 			const auto new_blocks = partition_(begin(block), end(block), [symbol, &g](state state){
-				return apply(g, state, symbol).to.base();
+				return apply(g, state, symbol).to;
 			}, N);
 			for(auto && new_block : new_blocks){
 				if(new_block.size() != 1) return false;
@@ -78,7 +78,7 @@ result create_splitting_tree(const mealy& g, options opt){
 	};
 	const auto update_succession = [N, &succession](state s, state t, size_t depth){
 		if(succession.size() < depth+1) succession.resize(depth+1, vector<state>(N, -1));
-		succession[depth][s.base()] = t;
+		succession[depth][s] = t;
 	};
 
 	// We'll start with the root, obviously
@@ -99,7 +99,7 @@ result create_splitting_tree(const mealy& g, options opt){
 			const auto new_blocks = partition_(begin(boom.states), end(boom.states), [symbol, depth, &g, &update_succession](state state){
 				const auto ret = apply(g, state, symbol);
 				update_succession(state, ret.to, depth);
-				return ret.output.base();
+				return ret.output;
 			}, Q);
 
 			// no split -> continue with other input symbols
@@ -119,11 +119,11 @@ result create_splitting_tree(const mealy& g, options opt){
 		for(input symbol : all_inputs){
 			vector<bool> successor_states(N, false);
 			for(auto && state : boom.states){
-				successor_states[apply(g, state, symbol).to.base()] = true;
+				successor_states[apply(g, state, symbol).to] = true;
 			}
 
 			const auto & oboom = lca(root, [&successor_states](state state) -> bool{
-				return successor_states[state.base()];
+				return successor_states[state];
 			});
 
 			// a leaf, hence not a split -> try other symbols
@@ -134,7 +134,7 @@ result create_splitting_tree(const mealy& g, options opt){
 			const auto new_blocks = partition_(begin(boom.states), end(boom.states), [word, depth, &g, &update_succession](state state){
 				const auto ret = apply(g, state, begin(word), end(word));
 				update_succession(state, ret.to, depth);
-				return ret.output.base();
+				return ret.output;
 			}, Q);
 
 			// not a valid split -> continue

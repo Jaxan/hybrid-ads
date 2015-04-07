@@ -24,7 +24,7 @@ seperating_family create_seperating_family(const adaptive_distinguishing_sequenc
 			// add sequence to this leave
 			for(auto && p : node.CI){
 				const auto state = p.second;
-				seperating_family[state.base()].push_back(word);
+				seperating_family[state].push_back(word);
 			}
 
 			// if the leaf is not a singleton, we need the all_pair seperating seqs
@@ -33,7 +33,7 @@ seperating_family create_seperating_family(const adaptive_distinguishing_sequenc
 					const auto s = p.second;
 					const auto t = q.second;
 					if(s == t) continue;
-					seperating_family[s.base()].push_back(all_pair_seperating_sequences[s.base()][t.base()]);
+					seperating_family[s].push_back(all_pair_seperating_sequences[s][t]);
 				}
 			}
 

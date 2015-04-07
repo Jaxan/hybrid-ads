@@ -54,15 +54,15 @@ mealy read_mealy_from_dot(std::istream & in, translation & t){
 		if(t.output_indices.count(output) < 1) t.output_indices[output] = t.max_output++;
 
 		// add edge
-		m.graph.resize(max_state.base());
-		auto & v = m.graph[state_indices[lh].base()];
-		v.resize(t.max_input.base());
-		v[t.input_indices[input].base()] = {state_indices[rh], t.output_indices[output]};
+		m.graph.resize(max_state);
+		auto & v = m.graph[state_indices[lh]];
+		v.resize(t.max_input);
+		v[t.input_indices[input]] = {state_indices[rh], t.output_indices[output]};
 	}
 
-	m.graph_size = max_state.base();
-	m.input_size = t.max_input.base();
-	m.output_size = t.max_output.base();
+	m.graph_size = max_state;
+	m.input_size = t.max_input;
+	m.output_size = t.max_output;
 
 	if(m.graph_size == 0) throw runtime_error("Empty state set");
 	if(m.input_size == 0) throw runtime_error("Empty input set");

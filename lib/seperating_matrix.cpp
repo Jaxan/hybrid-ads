@@ -26,10 +26,10 @@ seperating_matrix create_all_pair_seperating_sequences(const splitting_tree & ro
 			while(jt != ed){
 				for(auto && s : it->states){
 					for(auto && t : jt->states){
-						assert(all_pair_seperating_sequences[t.base()][s.base()].empty());
-						assert(all_pair_seperating_sequences[s.base()][t.base()].empty());
-						all_pair_seperating_sequences[t.base()][s.base()] = node.seperator;
-						all_pair_seperating_sequences[s.base()][t.base()] = node.seperator;
+						assert(all_pair_seperating_sequences[t][s].empty());
+						assert(all_pair_seperating_sequences[s][t].empty());
+						all_pair_seperating_sequences[t][s] = node.seperator;
+						all_pair_seperating_sequences[s][t] = node.seperator;
 					}
 				}
 				jt++;

@@ -101,11 +101,11 @@ int main(int argc, char *argv[]) try {
 				for(input i = 0; i < machine.input_size; ++i){
 					//const auto test1 = apply(machine, s, i).output != machine.output_indices.at("quiescence");
 					const auto test2 = apply(machine, s, i).to != s;
-					r_cache[i.base()] = 0.1 + test2;
+					r_cache[i] = 0.1 + test2;
 				}
 			}
 
-			distributions[s.base()] = discrete_distribution<input>(begin(r_cache), end(r_cache));
+			distributions[s] = discrete_distribution<input>(begin(r_cache), end(r_cache));
 		}
 		return distributions;
 	});
@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) try {
 	const auto inputs = inputs_fut.get();
 
 	const auto print_word = [&](auto w){
-		for(auto && x : w) cout << inputs[x.base()] << ' ';
+		for(auto && x : w) cout << inputs[x] << ' ';
 	};
 
 	if(statistics){
@@ -176,9 +176,9 @@ int main(int argc, char *argv[]) try {
 		for(int k = 0; k <= k_max; ++k){
 			cerr << "*** K = " << k << endl;
 			for(state s = 0; s < machine.graph_size; ++s){
-				const auto prefix = transfer_sequences[s.base()];
+				const auto prefix = transfer_sequences[s];
 
-				for(auto && suffix : seperating_family[s.base()]){
+				for(auto && suffix : seperating_family[s]){
 					for(auto && r : all_sequences){
 						print_word(prefix);
 						print_word(r);
@@ -214,14 +214,14 @@ int main(int argc, char *argv[]) try {
 			m.reserve(k_max + 2);
 			size_t minimal_size = k_max + 1;
 			while(minimal_size || unfair_coin(generator)){
-				input i = relevant_inputs[current_state.base()](generator);
+				input i = relevant_inputs[current_state](generator);
 				m.push_back(i);
 				current_state = apply(machine, current_state, i).to;
 				if(minimal_size) minimal_size--;
 			}
 
 			using params = uniform_int_distribution<size_t>::param_type;
-			const auto & suffixes = seperating_family[current_state.base()];
+			const auto & suffixes = seperating_family[current_state];
 			const auto & s = suffixes[suffix_selection(generator, params{0, suffixes.size()-1})];
 
 			print_word(p);

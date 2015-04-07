@@ -21,16 +21,16 @@ transfer_sequences create_transfer_sequences(const mealy& machine, state s){
 		const auto d = p.first - 1;
 		work.pop();
 
-		if(visited[u.base()]) continue;
+		if(visited[u]) continue;
 
-		visited[u.base()] = true;
+		visited[u] = true;
 
 		for(input i = 0; i < machine.input_size; ++i){
 			const auto v = apply(machine, u, i).to;
-			if(visited[v.base()]) continue;
+			if(visited[v]) continue;
 
-			words[v.base()] = words[u.base()];
-			words[v.base()].push_back(i);
+			words[v] = words[u];
+			words[v].push_back(i);
 			work.push({d, v});
 		}
 	}
@@ -55,17 +55,17 @@ transfer_sequences create_randomized_transfer_sequences(const mealy & machine, s
 		const auto d = p.first - 1;
 		work.pop();
 
-		if(visited[u.base()]) continue;
+		if(visited[u]) continue;
 
-		visited[u.base()] = true;
+		visited[u] = true;
 
 		shuffle(begin(all_inputs), end(all_inputs), generator);
 		for(input i : all_inputs){
 			const auto v = apply(machine, u, i).to;
-			if(visited[v.base()]) continue;
+			if(visited[v]) continue;
 
-			words[v.base()] = words[u.base()];
-			words[v.base()].push_back(i);
+			words[v] = words[u];
+			words[v].push_back(i);
 			work.push({d, v});
 		}
 	}

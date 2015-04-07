@@ -54,10 +54,10 @@ int main(int argc, char *argv[]){
 		for(auto && p : state_cover){
 			state s = 0;
 			for(auto && inp : p){
-				if(!visited[s.base()]) visited[s.base()] = i;
+				if(!visited[s]) visited[s] = i;
 				s = apply(machine, s, inp).to;
 			}
-			if(!visited[s.base()]) visited[s.base()] = i;
+			if(!visited[s]) visited[s] = i;
 		}
 	}
 
@@ -72,21 +72,21 @@ int main(int argc, char *argv[]){
 		out << "digraph {\n";
 
 		for(state s = 0; s < machine.graph_size; ++s){
-			bool is_visited = visited[s.base()] ? (visited[s.base()].value() <= i) : false;
+			bool is_visited = visited[s] ? (visited[s].value() <= i) : false;
 			out << "\t" << "s" << s << " [";
 			out << "color=\"" << (is_visited ? "green" : "red") << "\"" << ", ";
-			out << "pos=\"" << positions[s.base()].first << "," << positions[s.base()].second << "\"";
+			out << "pos=\"" << positions[s].first << "," << positions[s].second << "\"";
 			out << "]\n";
 		}
 
 		for(state s = 0; s < machine.graph_size; ++s){
 			vector<bool> visited(machine.graph_size, false);
-			visited[s.base()] = true;
+			visited[s] = true;
 			for(input i = 0; i < machine.input_size; ++i){
 				const auto t = apply(machine, s, i).to;
-				if(visited[t.base()]) continue;
+				if(visited[t]) continue;
 				out << "\t" << "s" << s << " -> " << "s" << t << "\n";
-				visited[t.base()] = true;
+				visited[t] = true;
 			}
 		}
 

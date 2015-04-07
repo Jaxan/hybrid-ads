@@ -16,13 +16,13 @@ auto create_transfer_sequences(const mealy& machine, const state s, const input 
 		const auto u = work.front();
 		work.pop();
 
-		if(visited[u.base()]) continue;
-		visited[u.base()] = true;
+		if(visited[u]) continue;
+		visited[u] = true;
 
 		for(input i = 0; i < machine.input_size; ++i){
 			if(i == ignore) continue;
 			const auto v = apply(machine, u, i).to;
-			if(visited[v.base()]) continue;
+			if(visited[v]) continue;
 			work.push(v);
 		}
 	}
@@ -40,7 +40,7 @@ int main(int argc, char *argv[]){
 
 //	vector<vector<bool>> table(machine.input_size);
 //	for(input i = 0; i < machine.input_size; ++i){
-//		table[i.base()] = create_transfer_sequences(machine, 0, i);
+//		table[i] = create_transfer_sequences(machine, 0, i);
 //	}
 
 	// note the wrong iteration ;D
