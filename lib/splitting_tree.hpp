@@ -61,10 +61,10 @@ struct options {
 	bool randomized = false;
 };
 
-constexpr options lee_yannakakis_style{true, true, false};
-constexpr options hopcroft_style{false, false, false};
-constexpr options randomized_lee_yannakakis_style{true, true, true};
-constexpr options randomized_hopcroft_style{false, false, true};
+const options lee_yannakakis_style{true, true, false};
+const options hopcroft_style{false, false, false};
+const options randomized_lee_yannakakis_style{true, true, true};
+const options randomized_hopcroft_style{false, false, true};
 
 /*
  * The algorithm to create a splitting tree also produces some other useful
