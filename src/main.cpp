@@ -121,10 +121,12 @@ int main(int argc, char *argv[]) try {
 	const auto transfer_sequences = transfer_sequences_fut.get();
 	const auto inputs = inputs_fut.get();
 
-	const auto print_word = [&](auto w){
+	const auto print_word = [&](vector<input> w){
 		for(auto && x : w) cout << inputs[x] << ' ';
 	};
 
+// This part is commented out, as the polymorphic lambdas are kinda important
+#if 0
 	if(statistics){
 		const auto adder = [](auto const & x){
 			return [&x](auto const & l, auto const & r) { return l + x(r); };
@@ -168,6 +170,7 @@ int main(int argc, char *argv[]) try {
 			length += 1;
 		}
 	}
+#endif
 
 	if(streaming){
 		time_logger t("outputting all preset tests");

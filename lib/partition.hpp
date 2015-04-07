@@ -33,6 +33,6 @@ auto partition_(Iterator b, Iterator e, Fun && function, size_t output_size) {
 		ar->splice(ar->end(), elements, current);
 	}
 
-	assert(s == accumulate(begin(blocks), end(blocks), 0, [](auto && l, auto && r) { return l + r.size(); }));
+	assert(s == accumulate(begin(blocks), end(blocks), 0, [](size_t l, const list<T> & r) { return l + r.size(); }));
 	return blocks;
 }

@@ -49,7 +49,7 @@ result create_splitting_tree(const mealy& g, options opt){
 	mt19937 generator(rd());
 
 	// Some lambda functions capturing some state, makes the code a bit easier :)
-	const auto add_push_new_block = [&work](auto new_blocks, auto & boom) {
+	const auto add_push_new_block = [&work](list<list<state>> const & new_blocks, splitting_tree& boom) {
 		boom.children.assign(new_blocks.size(), splitting_tree(0, boom.depth + 1));
 
 		auto i = 0;
@@ -61,9 +61,9 @@ result create_splitting_tree(const mealy& g, options opt){
 			work.push(c);
 		}
 
-		assert(boom.states.size() == accumulate(begin(boom.children), end(boom.children), 0, [](auto l, auto r) { return l + r.states.size(); }));
+		assert(boom.states.size() == accumulate(begin(boom.children), end(boom.children), 0, [](size_t l, const splitting_tree & r) { return l + r.states.size(); }));
 	};
-	const auto is_valid = [N, opt, &g](auto blocks, auto symbol){
+	const auto is_valid = [N, opt, &g](list<list<state>> const & blocks, input symbol){
 		if(!opt.check_validity) return true;
 
 		for(auto && block : blocks) {

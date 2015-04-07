@@ -37,7 +37,7 @@ void write_adaptive_distinguishing_sequence_to_dot(const adaptive_distinguishing
 			out << node.word;
 		} else {
 			vector<state> I(node.CI.size());
-			transform(begin(node.CI), end(node.CI), begin(I), [](auto p){ return p.second; });
+			transform(begin(node.CI), end(node.CI), begin(I), [](const pair<state, state> p){ return p.second; });
 			out << "I = " << I;
 		}
 	}, out);
