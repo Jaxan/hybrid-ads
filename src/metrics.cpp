@@ -7,7 +7,7 @@
 
 using namespace std;
 
-static auto create_transfer_sequences(const mealy& machine, const state s, const input ignore){
+static vector<bool> create_transfer_sequences(const mealy& machine, const state s, const input ignore){
 	vector<bool> visited(machine.graph_size, false);
 
 	queue<state> work;

@@ -29,7 +29,7 @@ struct mealy {
 	size_t output_size = 0;
 };
 
-inline auto is_complete(const mealy & m){
+inline bool is_complete(const mealy & m){
 	for(state n = 0; n < m.graph_size; ++n){
 		if(m.graph[n].size() != m.input_size) return false;
 		for(auto && e : m.graph[n]) if(e.to == state(-1) || e.output == output(-1)) return false;
@@ -37,12 +37,12 @@ inline auto is_complete(const mealy & m){
 	return true;
 }
 
-inline auto apply(mealy const & m, state state, input input){
+inline mealy::edge apply(mealy const & m, state state, input input){
 	return m.graph[state][input];
 }
 
 template <typename Iterator>
-auto apply(mealy const & m, state state, Iterator b, Iterator e){
+mealy::edge apply(mealy const & m, state state, Iterator b, Iterator e){
 	mealy::edge ret;
 	ret.to = state;
 	while(b != e){

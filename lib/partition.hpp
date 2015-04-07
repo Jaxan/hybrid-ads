@@ -8,7 +8,7 @@
 #include <vector>
 
 template <typename Iterator, typename Fun>
-auto partition_(Iterator b, Iterator e, Fun && function, size_t output_size) {
+std::list<std::list<typename Iterator::value_type>> partition_(Iterator b, Iterator e, Fun && function, size_t output_size) {
 	using namespace std;
 	using T = typename decay<decltype(*b)>::type;
 
