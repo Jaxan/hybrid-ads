@@ -1,6 +1,7 @@
 #include <adaptive_distinguishing_sequence.hpp>
 #include <logging.hpp>
 #include <mealy.hpp>
+#include <reachability.hpp>
 #include <read_mealy_from_dot.hpp>
 #include <seperating_family.hpp>
 #include <seperating_matrix.hpp>
@@ -25,8 +26,8 @@ int main(int argc, char *argv[]) try {
 	const auto k_max = stoul(argv[2]);
 
 	const string mode = argv[3];
-	const bool streaming = mode == "stream";
-	const bool random_part = streaming;
+	const bool streaming = mode == "stream" || mode == "stop";
+	const bool random_part = streaming && mode != "stop";
 	const bool statistics = mode == "stats";
 
 	const bool use_distinguishing_sequence = true;
@@ -44,7 +45,7 @@ int main(int argc, char *argv[]) try {
 		}
 	}();
 
-	const auto & machine = machine_and_translation.first;
+	const auto & machine = reachable_submachine(move(machine_and_translation.first), 0);
 	const auto & translation = machine_and_translation.second;
 
 	auto all_pair_seperating_sequences_fut = async([&]{
