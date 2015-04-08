@@ -23,10 +23,15 @@ import java.util.*;
 public class YannakakisEQOracle<O> implements EquivalenceOracle.MealyEquivalenceOracle<String, O> {
 	private final MembershipOracle<String, Word<O>> sulOracle;
 	private final List<Alphabet<String>> alphabets;
-	private final ProcessBuilder pb;
+	private final ProcessBuilder pb = new ProcessBuilder("/Users/joshua/Documents/PhD/Yannakakis/build/main", "--", "1", "stream");
 
-	int currentAlphabet = 0;
+	private int currentAlphabet = 0;
 	private long bound = 100;
+	private long boundFactor = 10; // How much should it grow?
+
+	// We buffer queries, in order to allow for parallel membership queries.
+	private int bufferSize = 100;
+	private ArrayList<DefaultQuery<String, Word<O>>> buffer = new ArrayList<>(bufferSize);
 
 	private Process process;
 	private Writer processInput;
@@ -41,7 +46,6 @@ public class YannakakisEQOracle<O> implements EquivalenceOracle.MealyEquivalence
 	YannakakisEQOracle(List<Alphabet<String>> alphabets, MembershipOracle<String, Word<O>> sulOracle) throws IOException {
 		this.sulOracle = sulOracle;
 		this.alphabets = alphabets;
-		pb = new ProcessBuilder("/Users/joshua/Documents/PhD/Yannakakis/build/main", "--", "1", "stream");
 	}
 
 	/**
@@ -121,14 +125,21 @@ public class YannakakisEQOracle<O> implements EquivalenceOracle.MealyEquivalence
 		while(true) {
 			// start where we left previously
 			for(; currentAlphabet < alphabets.size(); ++currentAlphabet){
-				System.err.println("ERROR> log> Testing with subalphabet " + currentAlphabet);
+				System.err.println("ERROR> log> Testing with sub alphabet " + currentAlphabet);
 				Alphabet<String> a = alphabets.get(currentAlphabet);
 				DefaultQuery<String, Word<O>> r = findCounterExampleImpl(machine, a, bound);
-				if (r != null) return r;
+				if (r != null) return r; // NOTE: at this point we might want to clear the buffer
+
+				// We want to process the buffer, because if the counter example is in here, we want to continue
+				// with the current sub alphabet
+				if(!buffer.isEmpty()){
+					r = checkAndEmptyBuffer(machine);
+					if(r != null){ return r; }
+				}
 			}
-			System.err.println("ERROR> log> Increasing bound by a factor of 10");
 			currentAlphabet = 0;
-			bound *= 10;
+			bound *= boundFactor;
+			System.err.println("ERROR> log> Increased bound by a factor of 10: " + bound);
 		}
 	}
 
@@ -146,16 +157,9 @@ public class YannakakisEQOracle<O> implements EquivalenceOracle.MealyEquivalence
 			processInput.flush();
 
 			// Read every line outputted on stdout.
+			// We buffer the queries, so that a parallel membership query can be applied
 			String line;
 			while ((line = processOutput.readLine()) != null) {
-				// Break if we did not fin one in time
-				++queryCount;
-				if(queryCount > bound) {
-					System.err.println("ERROR> log> Bound is reached");
-					closeAll();
-					return null;
-				}
-
 				// Read every string of the line, this will be a symbol of the input sequence.
 				WordBuilder<String> wb = new WordBuilder<>();
 				Scanner s = new Scanner(line);
@@ -166,21 +170,24 @@ public class YannakakisEQOracle<O> implements EquivalenceOracle.MealyEquivalence
 				// Convert to a word and test on the SUL
 				Word<String> test = wb.toWord();
 				DefaultQuery<String, Word<O>> query = new DefaultQuery<>(test);
-				sulOracle.processQueries(Collections.singleton(query));
+				buffer.add(query);
 
-				// Also test on the hypothesis
-				Word<O> o1 = machine.computeOutput(test);
-				Word<O> o2 = query.getOutput();
+				// Break if we did not fin one in time
+				++queryCount;
+				if(queryCount > bound) {
+					System.err.println("ERROR> log> Bound is reached");
+					closeAll();
+					return null;
+				}
 
-				assert o1 != null;
-				assert o2 != null;
-
-				// If equal => no counterexample :(
-				if(o1.equals(o2)) continue;
-
-				// If not equal => counterexample :D
-				closeAll();
-				return query;
+				// If the buffer is filled, we can perform the checks (possibly in parallel)
+				if(buffer.size() >= bufferSize){
+					DefaultQuery<String, Word<O>> r = checkAndEmptyBuffer(machine);
+					if(r != null){
+						closeAll();
+						return r;
+					}
+				}
 			}
 		} catch (IOException e) {
 			throw new RuntimeException("Unable to communicate with the external program: " + e);
@@ -202,6 +209,27 @@ public class YannakakisEQOracle<O> implements EquivalenceOracle.MealyEquivalence
 		}
 
 		// Here, the program exited normally, without counterexample, so we may return null.
+		return null;
+	}
+
+	private DefaultQuery<String, Word<O>> checkAndEmptyBuffer(MealyMachine<?, String, ?, O> machine){
+		sulOracle.processQueries(buffer);
+		DefaultQuery<String, Word<O>> r = inspectBuffer(machine);
+		buffer.clear();
+		return r;
+	}
+
+	private DefaultQuery<String, Word<O>> inspectBuffer(MealyMachine<?, String, ?, O> machine){
+		for(DefaultQuery<String, Word<O>> query : buffer){
+			Word<O> o1 = machine.computeOutput(query.getInput());
+			Word<O> o2 = query.getOutput();
+
+			assert o1 != null;
+			assert o2 != null;
+
+			// If equal => no counterexample :(
+			if(!o1.equals(o2)) return query;
+		}
 		return null;
 	}
 }

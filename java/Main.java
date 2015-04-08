@@ -15,6 +15,9 @@ import de.learnlib.eqtests.basic.WpMethodEQOracle;
 import de.learnlib.oracles.AbstractSingleQueryOracle;
 import de.learnlib.oracles.DefaultQuery;
 import de.learnlib.oracles.SimulatorOracle;
+import de.learnlib.parallelism.DynamicParallelOracle;
+import de.learnlib.parallelism.ParallelOracle;
+import de.learnlib.parallelism.ParallelOracleBuilders;
 import net.automatalib.automata.transout.MealyMachine;
 import net.automatalib.automata.transout.impl.compact.CompactMealy;
 import net.automatalib.util.graphs.dot.GraphDOT;
@@ -28,6 +31,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.function.Supplier;
 
 import static de.learnlib.cache.mealy.MealyCaches.createCache;
 
@@ -55,8 +59,12 @@ public class Main {
 		// queries needed to find a counterexample.
 		System.out.println("Setting up membership oracles");
 		SimulatorOracle.MealySimulatorOracle<String, String> mOracleMealy = new SimulatorOracle.MealySimulatorOracle<>(fm);
-		CountingQueryOracle<String, Word<String>> mOracleCounting1 = new CountingQueryOracle<>(mOracleMealy);
-		CountingQueryOracle<String, Word<String>> mOracleCounting2 = new CountingQueryOracle<>(mOracleMealy);
+		DynamicParallelOracle<String, Word<String>> mParallelOracle = ParallelOracleBuilders.newDynamicParallelOracle(() -> {
+			return new SimulatorOracle.MealySimulatorOracle<>(fm);
+		}).withBatchSize(5)
+				.withPoolSize(4)
+				.withPoolPolicy(ParallelOracle.PoolPolicy.FIXED)
+				.create();
 
 
 		// We can test multiple equivalence oracles. The eqOracleMealy sees the SUL as a white box mealy machine to
@@ -65,11 +73,9 @@ public class Main {
 		// the Lee and Yannakakis oracle.
 		System.out.println("Setting up equivalence oracles");
 		SimulatorEQOracle.MealySimulatorEQOracle<String, String> eqOracleMealy = new SimulatorEQOracle.MealySimulatorEQOracle<>(fm);
-		WpMethodEQOracle.MealyWpMethodEQOracle<String, String> eqOracleWp = new WpMethodEQOracle.MealyWpMethodEQOracle<>(3, mOracleCounting2);
-		WMethodEQOracle.MealyWMethodEQOracle<String, String> eqOracleW = new WMethodEQOracle.MealyWMethodEQOracle<>(2, mOracleCounting2);
-		EquivalenceOracle.MealyEquivalenceOracle<String, String> eqOracleYannakakis = new YannakakisEQOracle<>(alphabets, mOracleCounting2);
-		EquivalenceOracle.MealyEquivalenceOracle<String, String> eqOracleSpecific = new SpecificCounterExampleOracle(mOracleCounting2);
-		EQOracleChain.MealyEQOracleChain eqOracleYannakakisPlus = new EQOracleChain.MealyEQOracleChain(Arrays.asList(eqOracleSpecific, eqOracleYannakakis));
+		WpMethodEQOracle.MealyWpMethodEQOracle<String, String> eqOracleWp = new WpMethodEQOracle.MealyWpMethodEQOracle<>(3, mParallelOracle);
+		WMethodEQOracle.MealyWMethodEQOracle<String, String> eqOracleW = new WMethodEQOracle.MealyWMethodEQOracle<>(2, mParallelOracle);
+		EquivalenceOracle.MealyEquivalenceOracle<String, String> eqOracleYannakakis = new YannakakisEQOracle<>(alphabets, mParallelOracle);
 
 		// The chosen oracle to experiment with.
 		EquivalenceOracle.MealyEquivalenceOracle<String, String> eqOracle = eqOracleYannakakis;
@@ -77,8 +83,8 @@ public class Main {
 
 		// Learnlib comes with different learning algorithms
 		System.out.println("Setting up learner(s)");
-		MealyDHC<String, String> learnerDHC = new MealyDHC<>(alphabet, mOracleCounting1);
-		ExtensibleLStarMealy<String, String> learnerLStar = new ExtensibleLStarMealy<>(alphabet, mOracleCounting1, Lists.<Word<String>>newArrayList(), ObservationTableCEXHandlers.CLASSIC_LSTAR, ClosingStrategies.CLOSE_FIRST);
+		MealyDHC<String, String> learnerDHC = new MealyDHC<>(alphabet, mParallelOracle);
+		ExtensibleLStarMealy<String, String> learnerLStar = new ExtensibleLStarMealy<>(alphabet, mParallelOracle, Lists.<Word<String>>newArrayList(), ObservationTableCEXHandlers.CLASSIC_LSTAR, ClosingStrategies.CLOSE_FIRST);
 
 		// The chosen learning algorithm
 		LearningAlgorithm.MealyLearner<String, String> learner = learnerLStar;
@@ -106,15 +112,11 @@ public class Main {
 
 			System.out.println(stage++ + ": " + Calendar.getInstance().getTime());
 			System.out.println("Hypothesis has " + learner.getHypothesisModel().getStates().size() + " states");
-			mOracleCounting1.log_and_reset("learning");
-			mOracleCounting2.log_and_reset("finding a counter example");
 			System.out.println();
 		}
 
 		System.out.println(stage++ + ": " + Calendar.getInstance().getTime());
 		System.out.println("Conclusion has " + learner.getHypothesisModel().getStates().size() + " states");
-		mOracleCounting1.log_and_reset("learning");
-		mOracleCounting2.log_and_reset("finding a counter example");
 		System.out.println("Done!");
 
 		PrintWriter output = new PrintWriter("last_hypothesis.dot");
@@ -152,34 +154,6 @@ public class Main {
 			query_count++;
 			symbol_count += word.length() + word1.length();
 			return delegate.answerQuery(word, word1);
-		}
-	}
-
-	/**
-	 * An equivalence oracle to test a single sequence, which I needed to learn the Oce test case.
-	 */
-	public static class SpecificCounterExampleOracle implements EquivalenceOracle.MealyEquivalenceOracle<String, String> {
-		private final MembershipOracle<String, Word<String>> sulOracle;
-		private boolean fired = false;
-
-		SpecificCounterExampleOracle(MembershipOracle<String, Word<String>> sulOracle){
-			this.sulOracle = sulOracle;
-		}
-
-		@Nullable
-		@Override
-		public DefaultQuery<String, Word<String>> findCounterExample(MealyMachine<?, String, ?, String> objects, Collection<? extends String> collection) {
-			if(fired) return null;
-
-			WordBuilder<String> wb = new WordBuilder<>();
-			wb.append("52.5", "53.4", "21.0", "21.0", "21.0", "21.0", "21.0", "21.0", "21.0", "21.0", "21.0", "37.2", "10", "9.4");
-
-			Word<String> test = wb.toWord();
-			DefaultQuery<String, Word<String>> query = new DefaultQuery<>(test);
-			sulOracle.processQueries(Collections.singleton(query));
-
-			fired = true;
-			return query;
 		}
 	}
 }
