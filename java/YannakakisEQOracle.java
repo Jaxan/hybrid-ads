@@ -5,14 +5,13 @@ import de.learnlib.api.MembershipOracle;
 import de.learnlib.oracles.DefaultQuery;
 import net.automatalib.automata.transout.MealyMachine;
 import net.automatalib.util.graphs.dot.GraphDOT;
+import net.automatalib.words.Alphabet;
 import net.automatalib.words.Word;
 import net.automatalib.words.WordBuilder;
 
 import javax.annotation.Nullable;
 import java.io.*;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Scanner;
+import java.util.*;
 
 /**
  * Implements the Lee & Yannakakis suffixes by invoking an external program. Because of this indirection to an external
@@ -23,7 +22,11 @@ import java.util.Scanner;
  */
 public class YannakakisEQOracle<O> implements EquivalenceOracle.MealyEquivalenceOracle<String, O> {
 	private final MembershipOracle<String, Word<O>> sulOracle;
+	private final List<Alphabet<String>> alphabets;
 	private final ProcessBuilder pb;
+
+	int currentAlphabet = 0;
+	private long bound = 100;
 
 	private Process process;
 	private Writer processInput;
@@ -35,9 +38,10 @@ public class YannakakisEQOracle<O> implements EquivalenceOracle.MealyEquivalence
 	 * @param sulOracle The membership oracle of the SUL, we need this to check the output on the test suite
 	 * @throws IOException
 	 */
-	YannakakisEQOracle(MembershipOracle<String, Word<O>> sulOracle) throws IOException {
+	YannakakisEQOracle(List<Alphabet<String>> alphabets, MembershipOracle<String, Word<O>> sulOracle) throws IOException {
 		this.sulOracle = sulOracle;
-		pb = new ProcessBuilder("/Users/joshua/Documents/Code/Kweekvijver/Yannakakis/build/main", "--", "1", "stream");
+		this.alphabets = alphabets;
+		pb = new ProcessBuilder("/Users/joshua/Documents/PhD/Yannakakis/build/main", "--", "1", "stream");
 	}
 
 	/**
@@ -113,12 +117,29 @@ public class YannakakisEQOracle<O> implements EquivalenceOracle.MealyEquivalence
 	@Nullable
 	@Override
 	public DefaultQuery<String, Word<O>> findCounterExample(MealyMachine<?, String, ?, O> machine, Collection<? extends String> inputs) {
+		// we're ignoring the external alphabet, only our own are used!
+		while(true) {
+			// start where we left previously
+			for(; currentAlphabet < alphabets.size(); ++currentAlphabet){
+				System.err.println("ERROR> log> Testing with subalphabet " + currentAlphabet);
+				Alphabet<String> a = alphabets.get(currentAlphabet);
+				DefaultQuery<String, Word<O>> r = findCounterExampleImpl(machine, a, bound);
+				if (r != null) return r;
+			}
+			System.err.println("ERROR> log> Increasing bound by a factor of 10");
+			currentAlphabet = 0;
+			bound *= 10;
+		}
+	}
+
+	private DefaultQuery<String, Word<O>> findCounterExampleImpl(MealyMachine<?, String, ?, O> machine, Collection<? extends String> inputs, long bound) {
 		try {
 			setupProcess();
 		} catch (IOException e) {
 			throw new RuntimeException("Unable to start the external program: " + e);
 		}
 
+		long queryCount = 0;
 		try {
 			// Write the hypothesis to stdin of the external program
 			GraphDOT.write(machine, inputs, processInput);
@@ -127,6 +148,14 @@ public class YannakakisEQOracle<O> implements EquivalenceOracle.MealyEquivalence
 			// Read every line outputted on stdout.
 			String line;
 			while ((line = processOutput.readLine()) != null) {
+				// Break if we did not fin one in time
+				++queryCount;
+				if(queryCount > bound) {
+					System.err.println("ERROR> log> Bound is reached");
+					closeAll();
+					return null;
+				}
+
 				// Read every string of the line, this will be a symbol of the input sequence.
 				WordBuilder<String> wb = new WordBuilder<>();
 				Scanner s = new Scanner(line);

@@ -21,15 +21,15 @@ import net.automatalib.util.graphs.dot.GraphDOT;
 import net.automatalib.words.Alphabet;
 import net.automatalib.words.Word;
 import net.automatalib.words.WordBuilder;
+import net.automatalib.words.impl.Alphabets;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
+import java.util.*;
+
+import static de.learnlib.cache.mealy.MealyCaches.createCache;
 
 /**
  * Test for the Lee and Yannakakis implementation.
@@ -42,7 +42,10 @@ public class Main {
 		System.out.println("Reading dot file: " + filename);
 		GraphvizParser p = new GraphvizParser(Paths.get(filename));
 		CompactMealy<String, String> fm = p.createMachine();
+
 		Alphabet<String> alphabet = fm.getInputAlphabet();
+		Alphabet<String> subAlphabet = Alphabets.fromArray("21.1", "21.0", "22", "53.4", "52.5");
+		List<Alphabet<String>> alphabets = Arrays.asList(subAlphabet, alphabet);
 
 		System.out.println("created machine with " + fm.size() + " states and " + alphabet.size() + " inputs\n");
 
@@ -64,12 +67,12 @@ public class Main {
 		SimulatorEQOracle.MealySimulatorEQOracle<String, String> eqOracleMealy = new SimulatorEQOracle.MealySimulatorEQOracle<>(fm);
 		WpMethodEQOracle.MealyWpMethodEQOracle<String, String> eqOracleWp = new WpMethodEQOracle.MealyWpMethodEQOracle<>(3, mOracleCounting2);
 		WMethodEQOracle.MealyWMethodEQOracle<String, String> eqOracleW = new WMethodEQOracle.MealyWMethodEQOracle<>(2, mOracleCounting2);
-		EquivalenceOracle.MealyEquivalenceOracle<String, String> eqOracleYannakakis = new YannakakisEQOracle<>(mOracleCounting2);
+		EquivalenceOracle.MealyEquivalenceOracle<String, String> eqOracleYannakakis = new YannakakisEQOracle<>(alphabets, mOracleCounting2);
 		EquivalenceOracle.MealyEquivalenceOracle<String, String> eqOracleSpecific = new SpecificCounterExampleOracle(mOracleCounting2);
 		EQOracleChain.MealyEQOracleChain eqOracleYannakakisPlus = new EQOracleChain.MealyEQOracleChain(Arrays.asList(eqOracleSpecific, eqOracleYannakakis));
 
 		// The chosen oracle to experiment with.
-		EQOracleChain.MealyEQOracleChain eqOracle = eqOracleYannakakisPlus;
+		EquivalenceOracle.MealyEquivalenceOracle<String, String> eqOracle = eqOracleYannakakis;
 
 
 		// Learnlib comes with different learning algorithms
@@ -95,11 +98,11 @@ public class Main {
 			learner.refineHypothesis(ce);
 
 			// FIXME: Make this a command line option
-			String dir = "/Users/joshua/Documents/PhD/Machines/Mealy/esms3/";
-			String filenameh = dir + "hyp." + stage + ".obf.dot";
-			PrintWriter output = new PrintWriter(filenameh);
-			GraphDOT.write(learner.getHypothesisModel(), alphabet, output);
-			output.close();
+//			String dir = "/Users/joshua/Documents/PhD/Machines/Mealy/esms3/";
+//			String filenameh = dir + "hyp." + stage + ".obf.dot";
+//			PrintWriter output = new PrintWriter(filenameh);
+//			GraphDOT.write(learner.getHypothesisModel(), alphabet, output);
+//			output.close();
 
 			System.out.println(stage++ + ": " + Calendar.getInstance().getTime());
 			System.out.println("Hypothesis has " + learner.getHypothesisModel().getStates().size() + " states");
