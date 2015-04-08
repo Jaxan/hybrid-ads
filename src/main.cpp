@@ -106,7 +106,9 @@ int main(int argc, char *argv[]) try {
 				}
 			}
 
-			distributions[s] = discrete_distribution<input>(begin(r_cache), end(r_cache));
+			// VS 2013 is missing some c++11 support: http://stackoverflow.com/questions/21959404/initialising-stddiscrete-distribution-in-vs2013
+			size_t i = 0;
+			distributions[s] = discrete_distribution<input>(r_cache.size(), r_cache.front(), r_cache.back(), [&r_cache, &i](double) { return r_cache[i++]; });
 		}
 		return distributions;
 	});
