@@ -37,7 +37,7 @@ mealy reachable_submachine(const mealy& in, state start) {
 
 			if (out.graph.size() < max_state) out.graph.resize(max_state);
 			if (out.graph[s2].size() < in.input_size) out.graph[s2].resize(in.input_size);
-			out.graph[s2][i] = {t2, o};
+			out.graph[s2][i] = mealy::edge(t2, o);
 
 			if (!visited[t]) work.push(t);
 		}

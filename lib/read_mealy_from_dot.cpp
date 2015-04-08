@@ -57,7 +57,7 @@ mealy read_mealy_from_dot(std::istream & in, translation & t){
 		m.graph.resize(max_state);
 		auto & v = m.graph[state_indices[lh]];
 		v.resize(t.max_input);
-		v[t.input_indices[input]] = {state_indices[rh], t.output_indices[output]};
+		v[t.input_indices[input]] = mealy::edge(state_indices[rh], t.output_indices[output]);
 	}
 
 	m.graph_size = max_state;

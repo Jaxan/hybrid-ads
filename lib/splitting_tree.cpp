@@ -86,7 +86,7 @@ result create_splitting_tree(const mealy& g, options opt){
 	while(!work.empty()){
 		splitting_tree & boom = work.front();
 		work.pop();
-		const auto depth = boom.depth;
+		const size_t depth = boom.depth;
 
 		if(boom.states.size() == 1) continue;
 
@@ -130,9 +130,9 @@ result create_splitting_tree(const mealy& g, options opt){
 			if(oboom.children.empty()) continue;
 
 			// possibly a succesful split, construct the children
-			const auto word = concat({symbol}, oboom.seperator);
+			const vector<input> word = concat(vector<input>(1, symbol), oboom.seperator);
 			const auto new_blocks = partition_(begin(boom.states), end(boom.states), [word, depth, &g, &update_succession](state state){
-				const auto ret = apply(g, state, begin(word), end(word));
+				const mealy::edge ret = apply(g, state, word.begin(), word.end());
 				update_succession(state, ret.to, depth);
 				return ret.output;
 			}, Q);

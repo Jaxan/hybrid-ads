@@ -17,6 +17,8 @@
  */
 struct mealy {
 	struct edge {
+		edge() = default;
+		edge(state t, output o) : to(t), output(o) {}
 		state to = state(-1);
 		output output = size_t(-1);
 	};
