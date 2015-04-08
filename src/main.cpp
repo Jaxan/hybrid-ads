@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) try {
 	const auto & machine = reachable_submachine(move(machine_and_translation.first), 0);
 	const auto & translation = machine_and_translation.second;
 
-	auto all_pair_seperating_sequences_fut = async([&]{
+	auto all_pair_seperating_sequences = [&]{
 		const auto splitting_tree_hopcroft = [&]{
 			time_logger t("creating hopcroft splitting tree");
 			return create_splitting_tree(machine, randomize_hopcroft ? randomized_hopcroft_style : hopcroft_style);
@@ -60,9 +60,9 @@ int main(int argc, char *argv[]) try {
 		}();
 
 		return all_pair_seperating_sequences;
-	});
+	}();
 
-	auto sequence_fut = async([&]{
+	auto sequence = [&]{
 		const auto tree = [&]{
 			time_logger t("Lee & Yannakakis I");
 			if(use_distinguishing_sequence)
@@ -77,22 +77,22 @@ int main(int argc, char *argv[]) try {
 		}();
 
 		return sequence;
-	});
+	}();
 
-	auto transfer_sequences_fut = std::async([&]{
+	auto transfer_sequences = [&]{
 		time_logger t("determining transfer sequences");
 		if(randomize_prefixes){
 			return create_randomized_transfer_sequences(machine, 0);
 		} else {
 			return create_transfer_sequences(machine, 0);
 		}
-	});
+	}();
 
-	auto inputs_fut = std::async([&]{
+	auto inputs = [&]{
 		return create_reverse_map(translation.input_indices);
-	});
+	}();
 
-	auto relevant_inputs_fut = std::async([&]{
+	auto relevant_inputs = [&]{
 		time_logger t("determining relevance of inputs");
 		vector<discrete_distribution<input>> distributions(machine.graph_size);
 
@@ -111,18 +111,18 @@ int main(int argc, char *argv[]) try {
 			distributions[s] = discrete_distribution<input>(r_cache.size(), r_cache.front(), r_cache.back(), [&r_cache, &i](double) { return r_cache[i++]; });
 		}
 		return distributions;
-	});
+	}();
 
-	const auto all_pair_seperating_sequences = all_pair_seperating_sequences_fut.get();
-	const auto sequence = sequence_fut.get();
+	// const auto all_pair_seperating_sequences = all_pair_seperating_sequences_fut.get();
+	// const auto sequence = sequence_fut.get();
 
 	const auto seperating_family = [&]{
 		time_logger t("making seperating family");
 		return create_seperating_family(sequence, all_pair_seperating_sequences);
 	}();
 
-	const auto transfer_sequences = transfer_sequences_fut.get();
-	const auto inputs = inputs_fut.get();
+	// const auto transfer_sequences = transfer_sequences_fut.get();
+	// const auto inputs = inputs_fut.get();
 
 	const auto print_word = [&](vector<input> w){
 		for(auto && x : w) cout << inputs[x] << ' ';
@@ -208,7 +208,7 @@ int main(int argc, char *argv[]) try {
 		uniform_int_distribution<size_t> prefix_selection(0, transfer_sequences.size()-1);
 		uniform_int_distribution<> unfair_coin(0, 2); // expected flips is p / (p-1)^2, where p is succes probability
 		uniform_int_distribution<size_t> suffix_selection;
-		auto relevant_inputs = relevant_inputs_fut.get();
+		// auto relevant_inputs = relevant_inputs_fut.get();
 
 		while(true){
 			state current_state = 0;
