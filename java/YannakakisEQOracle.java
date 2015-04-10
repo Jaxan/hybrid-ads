@@ -181,7 +181,7 @@ public class YannakakisEQOracle<O> implements EquivalenceOracle.MealyEquivalence
 				}
 
 				// If the buffer is filled, we can perform the checks (possibly in parallel)
-				if(buffer.size() >= bufferSize){
+				if(buffer.size() >= bufferSize || bound <= bufferSize){
 					DefaultQuery<String, Word<O>> r = checkAndEmptyBuffer(machine);
 					if(r != null){
 						closeAll();

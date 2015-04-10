@@ -1,13 +1,19 @@
 package yannakakis;
 
 import com.google.common.collect.Lists;
+import de.learnlib.acex.analyzers.AcexAnalyzers;
 import de.learnlib.algorithms.dhc.mealy.MealyDHC;
+import de.learnlib.algorithms.kv.mealy.KearnsVaziraniMealy;
 import de.learnlib.algorithms.lstargeneric.ce.ObservationTableCEXHandlers;
 import de.learnlib.algorithms.lstargeneric.closing.ClosingStrategies;
 import de.learnlib.algorithms.lstargeneric.mealy.ExtensibleLStarMealy;
+import de.learnlib.algorithms.ttt.mealy.TTTLearnerMealy;
+import de.learnlib.algorithms.ttt.mealy.TTTLearnerMealyBuilder;
 import de.learnlib.api.EquivalenceOracle;
 import de.learnlib.api.LearningAlgorithm;
 import de.learnlib.api.MembershipOracle;
+import de.learnlib.api.Query;
+import de.learnlib.counterexamples.LocalSuffixFinders;
 import de.learnlib.eqtests.basic.EQOracleChain;
 import de.learnlib.eqtests.basic.SimulatorEQOracle;
 import de.learnlib.eqtests.basic.WMethodEQOracle;
@@ -28,9 +34,11 @@ import net.automatalib.words.impl.Alphabets;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static de.learnlib.cache.mealy.MealyCaches.createCache;
@@ -66,28 +74,28 @@ public class Main {
 				.withPoolPolicy(ParallelOracle.PoolPolicy.FIXED)
 				.create();
 
+		CountingMembershipOracle<String, Word<String>> mOracleForLearning = new CountingMembershipOracle<>(mParallelOracle, "learning");
+		CountingMembershipOracle<String, Word<String>> mOracleForTesting = new CountingMembershipOracle<>(mParallelOracle, "testing");
 
-		// We can test multiple equivalence oracles. The eqOracleMealy sees the SUL as a white box mealy machine to
-		// find a counterexample. The others all treat the SUL as a black box. Since there was one specific
-		// counterexample which was hard to find, I created an oracle precisely for that example, and chain it with
-		// the Lee and Yannakakis oracle.
+
+		// We can test multiple equivalence oracles. They all treat the SUL as a black box.
 		System.out.println("Setting up equivalence oracles");
-		SimulatorEQOracle.MealySimulatorEQOracle<String, String> eqOracleMealy = new SimulatorEQOracle.MealySimulatorEQOracle<>(fm);
-		WpMethodEQOracle.MealyWpMethodEQOracle<String, String> eqOracleWp = new WpMethodEQOracle.MealyWpMethodEQOracle<>(3, mParallelOracle);
-		WMethodEQOracle.MealyWMethodEQOracle<String, String> eqOracleW = new WMethodEQOracle.MealyWMethodEQOracle<>(2, mParallelOracle);
-		EquivalenceOracle.MealyEquivalenceOracle<String, String> eqOracleYannakakis = new YannakakisEQOracle<>(alphabets, mParallelOracle);
+		WpMethodEQOracle.MealyWpMethodEQOracle<String, String> eqOracleWp = new WpMethodEQOracle.MealyWpMethodEQOracle<>(3, mOracleForTesting);
+		WMethodEQOracle.MealyWMethodEQOracle<String, String> eqOracleW = new WMethodEQOracle.MealyWMethodEQOracle<>(2, mOracleForTesting);
+		EquivalenceOracle.MealyEquivalenceOracle<String, String> eqOracleYannakakis = new YannakakisEQOracle<>(alphabets, mOracleForTesting);
 
 		// The chosen oracle to experiment with.
-		EquivalenceOracle.MealyEquivalenceOracle<String, String> eqOracle = eqOracleYannakakis;
+		EquivalenceOracle<MealyMachine<?, String, ?, String>, String, Word<String>> eqOracle = eqOracleYannakakis;
 
 
 		// Learnlib comes with different learning algorithms
 		System.out.println("Setting up learner(s)");
-		MealyDHC<String, String> learnerDHC = new MealyDHC<>(alphabet, mParallelOracle);
-		ExtensibleLStarMealy<String, String> learnerLStar = new ExtensibleLStarMealy<>(alphabet, mParallelOracle, Lists.<Word<String>>newArrayList(), ObservationTableCEXHandlers.CLASSIC_LSTAR, ClosingStrategies.CLOSE_FIRST);
+		ExtensibleLStarMealy<String, String> learnerLStar = new ExtensibleLStarMealy<>(alphabet, mOracleForLearning, Lists.<Word<String>>newArrayList(), ObservationTableCEXHandlers.CLASSIC_LSTAR, ClosingStrategies.CLOSE_SHORTEST);
+		TTTLearnerMealy<String, String> learnerTTT = new TTTLearnerMealy<>(alphabet, mOracleForLearning, LocalSuffixFinders.FIND_LINEAR);
+		KearnsVaziraniMealy<String, String> learnerKV = new KearnsVaziraniMealy<>(alphabet, mOracleForLearning, false, AcexAnalyzers.BINARY_SEARCH);
 
 		// The chosen learning algorithm
-		LearningAlgorithm.MealyLearner<String, String> learner = learnerLStar;
+		LearningAlgorithm<MealyMachine<?, String, ?, String>, String, Word<String>> learner = learnerLStar;
 
 
 		// Here we will perform our experiment. I did not use the Experiment class from LearnLib, as I wanted some
@@ -98,12 +106,6 @@ public class Main {
 		learner.startLearning();
 
 		while(true) {
-			DefaultQuery<String, Word<String>> ce = eqOracle.findCounterExample(learner.getHypothesisModel(), alphabet);
-			if(ce == null) break;
-
-			learner.refineHypothesis(ce);
-
-			// FIXME: Make this a command line option
 //			String dir = "/Users/joshua/Documents/PhD/Machines/Mealy/esms3/";
 //			String filenameh = dir + "hyp." + stage + ".obf.dot";
 //			PrintWriter output = new PrintWriter(filenameh);
@@ -111,13 +113,21 @@ public class Main {
 //			output.close();
 
 			System.out.println(stage++ + ": " + Calendar.getInstance().getTime());
-			System.out.println("Hypothesis has " + learner.getHypothesisModel().getStates().size() + " states");
+			System.out.println("Hypothesis: " + learner.getHypothesisModel().getStates().size());
+			mOracleForLearning.logAndReset(System.out);
+			mOracleForTesting.logAndReset(System.out);
 			System.out.println();
+
+			DefaultQuery<String, Word<String>> ce = eqOracle.findCounterExample(learner.getHypothesisModel(), alphabet);
+			if(ce == null) break;
+
+			learner.refineHypothesis(ce);
 		}
 
-		System.out.println(stage++ + ": " + Calendar.getInstance().getTime());
-		System.out.println("Conclusion has " + learner.getHypothesisModel().getStates().size() + " states");
-		System.out.println("Done!");
+		System.out.println("Done with learning, no counter example found after:");
+		mOracleForLearning.logAndReset(System.out);
+		mOracleForTesting.logAndReset(System.out);
+		System.out.println();
 
 		PrintWriter output = new PrintWriter("last_hypothesis.dot");
 		GraphDOT.write(learner.getHypothesisModel(), alphabet, output);
@@ -126,34 +136,45 @@ public class Main {
 
 	/**
 	 * An membership oracle which maintains a count of the number of queries (and symbols). Usefull for testing
-	 * performance of equivalence oracles (which use membership oracles).
+	 * performance of equivalence oracles (which use membership oracles). It simply delegates the queries to
+	 * a delegate.
 	 * @param <I> Input alphabet
-	 * @param <O> Output alphabet
+	 * @param <D> Output domain (should be Word<O> for mealy machines)
 	 */
-	public static class CountingQueryOracle<I, O> extends AbstractSingleQueryOracle<I, O>{
-		private final AbstractSingleQueryOracle<I, O> delegate;
-		public int query_count = 0;
-		public int symbol_count = 0;
+	static public class CountingMembershipOracle<I, D> implements MembershipOracle<I, D> {
+		private final MembershipOracle<I, D> delegate;
+		private final String name;
+		private long queries = 0;
+		private long symbols = 0;
 
-		CountingQueryOracle(AbstractSingleQueryOracle<I, O> delegate){
+		public CountingMembershipOracle(MembershipOracle<I, D> delegate, String name){
 			this.delegate = delegate;
+			this.name = name;
 		}
 
 		public void reset(){
-			query_count = 0;
-			symbol_count = 0;
+			queries = 0;
+			symbols = 0;
 		}
 
-		public void log_and_reset(String message){
-			System.out.println("used " + query_count + " queries and " + symbol_count + " symbols for " + message);
+		public void log(PrintStream output){
+			output.println(name + ": queries: " + queries);
+			output.println(name + ": symbols: " + symbols);
+		}
+
+		public void logAndReset(PrintStream output){
+			log(output);
 			reset();
 		}
 
 		@Override
-		public O answerQuery(Word<I> word, Word<I> word1) {
-			query_count++;
-			symbol_count += word.length() + word1.length();
-			return delegate.answerQuery(word, word1);
+		public void processQueries(Collection<? extends Query<I, D>> collection) {
+			queries += collection.size();
+			collection.parallelStream().forEach((Query<I, D> idQuery) -> {
+				symbols += idQuery.getInput().size();
+			});
+
+			delegate.processQueries(collection);
 		}
 	}
 }
