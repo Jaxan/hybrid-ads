@@ -30,9 +30,9 @@ result create_splitting_tree(const mealy& g, options opt){
 	const auto P = g.input_size;
 	const auto Q = g.output_size;
 
-	result r(N);
-	auto & root = r.root;
-	auto & succession = r.successor_cache;
+	result ret(N);
+	auto & root = ret.root;
+	auto & succession = ret.successor_cache;
 
 	/* We'll use a queue to keep track of leaves we have to investigate;
 	 * In some cases we cannot split, and have to wait for other parts of the
@@ -61,7 +61,7 @@ result create_splitting_tree(const mealy& g, options opt){
 			work.push(c);
 		}
 
-		assert(boom.states.size() == accumulate(begin(boom.children), end(boom.children), 0, [](size_t l, const splitting_tree & r) { return l + r.states.size(); }));
+		assert(boom.states.size() == accumulate(begin(boom.children), end(boom.children), 0ul, [](size_t l, const splitting_tree & r) { return l + r.states.size(); }));
 	};
 	const auto is_valid = [N, opt, &g](list<list<state>> const & blocks, input symbol){
 		if(!opt.check_validity) return true;
@@ -97,9 +97,9 @@ result create_splitting_tree(const mealy& g, options opt){
 		// First try to split on output
 		for(input symbol : all_inputs){
 			const auto new_blocks = partition_(begin(boom.states), end(boom.states), [symbol, depth, &g, &update_succession](state state){
-				const auto ret = apply(g, state, symbol);
-				update_succession(state, ret.to, depth);
-				return ret.output;
+				const auto r = apply(g, state, symbol);
+				update_succession(state, r.to, depth);
+				return r.output;
 			}, Q);
 
 			// no split -> continue with other input symbols
@@ -132,9 +132,9 @@ result create_splitting_tree(const mealy& g, options opt){
 			// possibly a succesful split, construct the children
 			const vector<input> word = concat(vector<input>(1, symbol), oboom.seperator);
 			const auto new_blocks = partition_(begin(boom.states), end(boom.states), [word, depth, &g, &update_succession](state state){
-				const mealy::edge ret = apply(g, state, word.begin(), word.end());
-				update_succession(state, ret.to, depth);
-				return ret.output;
+				const mealy::edge r = apply(g, state, word.begin(), word.end());
+				update_succession(state, r.to, depth);
+				return r.output;
 			}, Q);
 
 			// not a valid split -> continue
@@ -151,8 +151,8 @@ result create_splitting_tree(const mealy& g, options opt){
 
 		// We tried all we could, but did not succeed => declare incompleteness.
 		if(days_without_progress++ >= work.size()) {
-			r.is_complete = false;
-			return r;
+			ret.is_complete = false;
+			return ret;
 		}
 		work.push(boom);
 		continue;
@@ -161,5 +161,5 @@ result create_splitting_tree(const mealy& g, options opt){
 		days_without_progress = 0;
 	}
 
-	return r;
+	return ret;
 }

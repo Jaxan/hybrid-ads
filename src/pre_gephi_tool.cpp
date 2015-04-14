@@ -23,20 +23,17 @@ int main(int argc, char *argv[]){
 	const size_t maximal_hypothesis = stoul(argv[4]);
 
 	// Read all the hypothesis
-	translation t;
+	translation trans;
 	vector<mealy> hypotheses;
 	for(size_t i = 0; i <= maximal_hypothesis; ++i){
 		clog << "Reading hypo " << i << endl;
 		string hypothesis_filename = hypo_filename_pattern;
 		auto it = hypothesis_filename.find('%');
 		hypothesis_filename.replace(it, 1, to_string(i));
-		hypotheses.push_back(read_mealy_from_dot(hypothesis_filename, t));
+		hypotheses.push_back(read_mealy_from_dot(hypothesis_filename, trans));
 	}
 
-	const auto machine = read_mealy_from_dot(machince_filename, t);
-
-	auto input_to_string = create_reverse_map(t.input_indices);
-	auto output_to_string = create_reverse_map(t.output_indices);
+	const auto machine = read_mealy_from_dot(machince_filename, trans);
 
 	// Read the positions by gephi, indexed by state
 	// (export to .net file and then `tail +2 Untitled.net | awk '{print $3, $4}' > positions.txt`)
@@ -62,17 +59,17 @@ int main(int argc, char *argv[]){
 	}
 
 	// Output a dot per hypo, making a movie
-	for(size_t i = 0; i < hypotheses.size(); ++i){
-		clog << "Saving frame " << i << endl;
+	for(size_t h = 0; h < hypotheses.size(); ++h){
+		clog << "Saving frame " << h << endl;
 		string hypothesis_filename = hypo_filename_pattern + ".movie";
 		auto it = hypothesis_filename.find('%');
-		hypothesis_filename.replace(it, 1, to_string(i));
+		hypothesis_filename.replace(it, 1, to_string(h));
 
 		ofstream out(hypothesis_filename);
 		out << "digraph {\n";
 
 		for(state s = 0; s < machine.graph_size; ++s){
-			bool is_visited = visited[s] ? (visited[s].value() <= i) : false;
+			bool is_visited = visited[s] ? (visited[s].value() <= h) : false;
 			out << "\t" << "s" << s << " [";
 			out << "color=\"" << (is_visited ? "green" : "red") << "\"" << ", ";
 			out << "pos=\"" << positions[s].first << "," << positions[s].second << "\"";
@@ -80,13 +77,13 @@ int main(int argc, char *argv[]){
 		}
 
 		for(state s = 0; s < machine.graph_size; ++s){
-			vector<bool> visited(machine.graph_size, false);
-			visited[s] = true;
+			vector<bool> should_ignore(machine.graph_size, false);
+			should_ignore[s] = true;
 			for(input i = 0; i < machine.input_size; ++i){
 				const auto t = apply(machine, s, i).to;
-				if(visited[t]) continue;
+				if(should_ignore[t]) continue;
 				out << "\t" << "s" << s << " -> " << "s" << t << "\n";
-				visited[t] = true;
+				should_ignore[t] = true;
 			}
 		}
 

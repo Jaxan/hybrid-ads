@@ -28,7 +28,6 @@ int main(int argc, char *argv[]) try {
 	const string mode = argv[3];
 	const bool streaming = mode == "stream" || mode == "stop";
 	const bool random_part = streaming && mode != "stop";
-	const bool statistics = mode == "stats";
 
 	const bool use_distinguishing_sequence = true;
 	const bool use_relevances = false;

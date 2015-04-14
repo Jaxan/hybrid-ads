@@ -64,13 +64,13 @@ int main(int argc, char *argv[]){
 	}
 
 	for(state s = 0; s < machine.graph_size; ++s){
-		vector<bool> visited(machine.graph_size, false);
-		visited[s] = true;
+		vector<bool> should_ignore(machine.graph_size, false);
+		should_ignore[s] = true;
 		for(input i = 0; i < machine.input_size; ++i){
 			const auto t = apply(machine, s, i).to;
-			if(visited[t]) continue;
+			if(should_ignore[t]) continue;
 			out << "\t" << "s" << s << " -> " << "s" << t << "\n";
-			visited[t] = true;
+			should_ignore[t] = true;
 		}
 	}
 
