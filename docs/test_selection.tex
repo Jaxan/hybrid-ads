@@ -1,0 +1,72 @@
+# Test selection strategies
+
+<intro stays more or less the same>
+
+
+## Augmented DS-method
+
+In order to perform less tests Chow and Vasilevski [...] pioneered the so called
+W-method. In their framework a test query consists of a prefix $p$ bringing the
+SUL to a specific state, a (random) middle part $m$ and a suffix $s$ asserting
+that the SUL is in the appropriate state. This results in a test suite of the
+form $P I^{\leq k} W$, where $P$ is a set of (shortest) access sequences,
+$I^{\leq k}$ the set of all sequences of length at most $k$ and $W$ is the
+characterization set. Classically, this characterization set is constructed by
+taking the set of all (pairwise) separating sequences. For $k=1$ this test suite
+is complete in the sense that if the SUL passes all tests, then either the SUL
+is equivalent to the specification or the SUL has strictly more states than the
+specification. By increasing $k$ we can check additional states.
+
+The generated test suite, however, was still too big in our learning context.
+Fujiwara observed that it is possible to let the set $W$ depend on the state the
+SUL is supposed to be [...]. This allows us to only take a subset of $W$ which
+is relevant for a specific state. This slightly reduces the test suite which is
+as powerful as the full test suite. This methods is known as the Wp-method. More
+importantly, this observation allows for generalizations where we can carefully
+pick the suffixes.
+
+In the presence of an (adaptive) distinguishing sequence we can take $W$ to be a
+single suffix, greatly reducing the test suite. Lee and Yannakakis describe an
+algorithm in [...] (which we will refer to as the LY algorithm) to efficiently
+construct this sequence, if it exists. In our case, most hypotheses did not
+enjoy an adaptive distinguishing sequence. In these cases the incomplete result
+from the LY algorithm still contained a lot of information which we augmented by
+pairwise separating sequences.
+
+As an example we show an incomplete adaptive distinguishing sequence for one of
+the hypothesis in Figure ??. When we apply the input sequence <add concrete
+example> and observe the right output, we know for sure that the SUL was in
+state <state>. Unfortunately not all path lead to a singleton set. When we for
+instance apply the sequence <add concrete example> and observe the right output,
+we know for sure that the SUL was in one of the states <state1, ..., staten>. In
+these cases we can resort the the pairwise separating sequences.
+
+We note that this augmented DS-method is in the worst case not any better than
+the classical Wp-method. In our case, however, it greatly reduced the test
+suites.
+
+Once we have our set of suffixes, which we call $Z$ now, our test algorithm
+works as follows. The algorithm first exhaust the set $P I^{\leq k} Z$. If this
+does not provide a counterexample, we will randomly pick test queries from $P
+I^2 I^\ast Z$, where the algorithm samples uniformly from $P$, $I^2$ and $Z$ (if
+$Z$ contains more that $1$ sequence for the supposed state) and with a geometric
+distribution on $I^\ast$.
+
+
+## Subalphabet selection
+
+During our attempts to learn the ESM we observed that the above method failed to
+produce a certain counterexample. With domain knowledge we were able to provide
+a handcrafted counterexample which allowed the algorithm to completely learn the
+controller. In order to do this automatically we defined a subalphabet which is
+important at the initialization phase of the controller. This subalphabet will
+be used a bit more often that the full alphabet. We do this as follows.
+
+We start testing with the alphabet which provided a counterexample for the
+previous hypothesis (for the first hypothesis we take the subalphabet). If no
+counterexample can be found within a specified query bound, then we repeat with
+the next alphabet. If both alphabets do not produce a counterexample within the
+bound, the bound is increased by some factor and we repeat all.
+
+This method only marginally increases the number of tests. But it did find the
+right counterexample we first had to construct by hand.
