@@ -26,13 +26,13 @@
 struct trie {
 	/// \brief Inserts a word (given by iterators \p begin and \p end)
 	/// \returns true if the element was inserted, false if already there
-	template <typename Iterator> bool insert(Iterator&& begin, Iterator&& end) {
+	template <typename Iterator> bool insert(Iterator && begin, Iterator && end) {
 		if (begin == end) return false;
 
 		size_t i = *begin++;
 		if (i >= branches.size()) branches.resize(i + 1);
 
-		auto& b = branches[i];
+		auto & b = branches[i];
 		if (b) return b->insert(begin, end);
 
 		b = trie();
@@ -43,27 +43,30 @@ struct trie {
 
 	/// \brief Inserts a word given as range \p r
 	/// \returns true if the element was inserted, false if already there
-	template <typename Range> bool insert(Range const& r) {
-		return insert(begin(r), end(r));
-	}
+	template <typename Range> bool insert(Range const & r) { return insert(begin(r), end(r)); }
 
-	/// \p function is applied to all word (not to the prefixes)
-	template <typename Fun> void for_each(Fun&& function) const {
+	/// \brief Applies \p function to all word (not to the prefixes)
+	template <typename Fun> void for_each(Fun && function) const {
 		std::vector<size_t> word;
 		return for_each_impl(std::forward<Fun>(function), word);
 	}
 
-	private:
-	template <typename Fun>
-	void for_each_impl(Fun&& function, std::vector<size_t>& word) const {
+	/// \brief Empties the complete set
+	void clear() {
+		count = 0;
+		branches.clear();
+	}
+
+  private:
+	template <typename Fun> void for_each_impl(Fun && function, std::vector<size_t> & word) const {
 		if (count == 0) {
-			const auto& cword = word;
+			const auto & cword = word;
 			function(cword); // we don't want function to modify word
 			return;
 		}
 
 		for (size_t i = 0; i < branches.size(); ++i) {
-			auto const& b = branches[i];
+			auto const & b = branches[i];
 			if (b) {
 				word.push_back(i);
 				b->for_each_impl(function, word);
@@ -78,4 +81,4 @@ struct trie {
 
 /// \brief Flattens a trie \p t
 /// \returns an array of words (without the prefixes)
-std::vector<std::vector<size_t>> flatten(trie const& t);
+std::vector<std::vector<size_t>> flatten(trie const & t);

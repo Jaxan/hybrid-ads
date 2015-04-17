@@ -183,7 +183,7 @@ int main(int argc, char *argv[]) try {
 			for(state s = 0; s < machine.graph_size; ++s){
 				const auto prefix = transfer_sequences[s];
 
-				for(auto && suffix : seperating_family[s]){
+				for(auto && suffix : seperating_family[s].local_suffixes){
 					for(auto && r : all_sequences){
 						print_word(prefix);
 						print_word(r);
@@ -226,7 +226,7 @@ int main(int argc, char *argv[]) try {
 			}
 
 			using params = uniform_int_distribution<size_t>::param_type;
-			const auto & suffixes = seperating_family[current_state];
+			const auto & suffixes = seperating_family[current_state].local_suffixes;
 			const auto & s = suffixes[suffix_selection(generator, params{0, suffixes.size()-1})];
 
 			print_word(p);

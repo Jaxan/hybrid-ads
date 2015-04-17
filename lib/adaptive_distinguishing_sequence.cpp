@@ -8,11 +8,8 @@
 using namespace std;
 
 adaptive_distinguishing_sequence::adaptive_distinguishing_sequence(size_t N, size_t d)
-: CI(N)
-, depth(d)
-{
-	for(size_t i = 0; i < N; ++i)
-		CI[i] = {i, i};
+: CI(N), depth(d) {
+	for (size_t i = 0; i < N; ++i) CI[i] = {i, i};
 }
 
 adaptive_distinguishing_sequence create_adaptive_distinguishing_sequence(const result & splitting_tree){
