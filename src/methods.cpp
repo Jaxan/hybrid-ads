@@ -13,20 +13,25 @@
 using namespace std;
 
 int main(int argc, char * argv[]) {
-	if (argc != 2) return 1;
+	if (argc != 4) return 1;
 
 	const string filename = argv[1];
-	const size_t k_max = 1;
+	const string mode = argv[2];
+	const bool use_no_LY = mode == "--W-method";
+	const size_t k_max = std::stoul(argv[3]);
 
 	const auto machine = read_mealy_from_dot(filename).first;
 
 	auto sequence_fut = async([&] {
+		if (use_no_LY) {
+			return create_adaptive_distinguishing_sequence(result(machine.graph_size));
+		}
 		const auto tree = create_splitting_tree(machine, randomized_lee_yannakakis_style);
 		return create_adaptive_distinguishing_sequence(tree);
 	});
 
 	auto pairs_fut = async([&] {
-		const auto tree = create_splitting_tree(machine, randomized_hopcroft_style);
+		const auto tree = create_splitting_tree(machine, randomized_min_hopcroft_style);
 		return create_all_pair_seperating_sequences(tree.root);
 	});
 
