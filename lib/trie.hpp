@@ -37,7 +37,6 @@ struct trie {
 
 		b = trie();
 		b->insert(begin, end);
-		count++;
 		return true;
 	}
 
@@ -53,32 +52,35 @@ struct trie {
 
 	/// \brief Empties the complete set
 	void clear() {
-		count = 0;
 		branches.clear();
 	}
 
   private:
 	template <typename Fun> void for_each_impl(Fun && function, std::vector<size_t> & word) const {
-		if (count == 0) {
-			const auto & cword = word;
-			function(cword); // we don't want function to modify word
-			return;
-		}
-
+		size_t count = 0;
 		for (size_t i = 0; i < branches.size(); ++i) {
 			auto const & b = branches[i];
 			if (b) {
+				++count;
 				word.push_back(i);
 				b->for_each_impl(function, word);
 				word.resize(word.size() - 1);
 			}
 		}
+
+		if (count == 0) {
+			const auto & cword = word;
+			function(cword); // we don't want function to modify word
+			return;
+		}
 	}
 
-	size_t count = 0;
 	std::vector<boost::optional<trie>> branches;
 };
 
 /// \brief Flattens a trie \p t
 /// \returns an array of words (without the prefixes)
 std::vector<std::vector<size_t>> flatten(trie const & t);
+
+/// \brief Returns size and total sum of symbols
+std::pair<size_t, size_t> total_size(trie const & t);
