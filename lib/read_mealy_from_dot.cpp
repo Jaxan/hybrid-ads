@@ -1,18 +1,16 @@
 #include "read_mealy_from_dot.hpp"
 #include "mealy.hpp"
 
+#include <boost/algorithm/string/trim.hpp>
+
 #include <fstream>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 
 using namespace std;
 
-template <typename T>
-T get(istream& in){
-	T t;
-	in >> t;
-	return t;
+static string easy_substr(string const & s, size_t begin, size_t end){
+	return s.substr(begin, end - begin);
 }
 
 mealy read_mealy_from_dot(std::istream & in, translation & t){
@@ -22,30 +20,28 @@ mealy read_mealy_from_dot(std::istream & in, translation & t){
 	state max_state = 0;
 
 	string line;
-	stringstream ss;
 	while(getline(in, line)){
+		using boost::algorithm::trim_copy;
+		const auto npos = std::string::npos;
+
 		if(line.find("}") != string::npos) break;
 
-		const auto i = line.find("->");
-		if(i == string::npos) continue;
+		// parse states
+		const auto arrow_pos = line.find("->");
+		const auto bracket_pos = line.find('[');
+		if(arrow_pos == npos || bracket_pos == npos) continue;
 
-		// get from and to state
-		ss.str(line);
-		ss.seekg(0);
-		const auto lh = get<string>(ss);
-		const auto arrow = get<string>(ss);
-		const auto rh = get<string>(ss);
+		const auto lh = trim_copy(easy_substr(line, 0, arrow_pos));
+		const auto rh = trim_copy(easy_substr(line, arrow_pos+2, bracket_pos));
 
-		// get label
-		const auto l1 = line.find('\"');
-		const auto l2 = line.find('\"', l1+1);
-		if(l1 == string::npos || l2 == string::npos) continue;
-		ss.str(line.substr(l1+1, l2-(l1+1)));
-		ss.seekg(0);
+		// parse input/output
+		const auto quote1_pos = line.find('\"', bracket_pos);
+		const auto slash_pos = line.find('/', quote1_pos);
+		const auto quote2_pos = line.find('\"', slash_pos);
+		if(quote1_pos == npos || slash_pos == npos || quote2_pos == npos) continue;
 
-		const auto input = get<string>(ss);
-		const auto slash = get<string>(ss);
-		const auto output = get<string>(ss);
+		const auto input = trim_copy(easy_substr(line, quote1_pos+1, slash_pos));
+		const auto output = trim_copy(easy_substr(line, slash_pos+1, quote2_pos));
 
 		// make fresh indices, if needed
 		if(state_indices.count(lh) < 1) state_indices[lh] = max_state++;
