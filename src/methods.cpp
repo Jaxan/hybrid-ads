@@ -1,7 +1,7 @@
 #include <adaptive_distinguishing_sequence.hpp>
 #include <read_mealy_from_dot.hpp>
-#include <seperating_family.hpp>
-#include <seperating_matrix.hpp>
+#include <characterization_family.hpp>
+#include <separating_matrix.hpp>
 #include <trie.hpp>
 #include <splitting_tree.hpp>
 #include <transfer_sequences.hpp>
@@ -79,6 +79,5 @@ int main(int argc, char * argv[]) {
 	}
 
 	const auto p = total_size(test_suite);
-	cout << p.first << endl;
-	cout << p.second << endl;
+	cout << p.first << '\t' << p.second << endl;
 }

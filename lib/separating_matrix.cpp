@@ -1,4 +1,4 @@
-#include "seperating_matrix.hpp"
+#include "separating_matrix.hpp"
 
 #include <cassert>
 #include <functional>
@@ -6,9 +6,9 @@
 
 using namespace std;
 
-seperating_matrix create_all_pair_seperating_sequences(const splitting_tree & root){
+separating_matrix create_all_pair_seperating_sequences(const splitting_tree & root){
 	const auto N = root.states.size();
-	seperating_matrix all_pair_seperating_sequences(N, seperating_row(N));
+	separating_matrix all_pair_seperating_sequences(N, separating_row(N));
 
 	queue<reference_wrapper<const splitting_tree>> work;
 	work.push(root);

@@ -1,4 +1,4 @@
-#include "seperating_family.hpp"
+#include "characterization_family.hpp"
 #include "trie.hpp"
 
 #include <boost/range/algorithm.hpp>
@@ -11,7 +11,7 @@
 using namespace std;
 
 characterization_family create_seperating_family(const adaptive_distinguishing_sequence & sequence,
-                                                 const seperating_matrix & sep_matrix) {
+                                                 const separating_matrix & sep_matrix) {
 	const auto N = sequence.CI.size();
 	// all words (global/local) for all states
 	vector<trie> suffixes(N);

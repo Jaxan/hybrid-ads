@@ -3,8 +3,8 @@
 #include <mealy.hpp>
 #include <reachability.hpp>
 #include <read_mealy_from_dot.hpp>
-#include <seperating_family.hpp>
-#include <seperating_matrix.hpp>
+#include <characterization_family.hpp>
+#include <separating_matrix.hpp>
 #include <splitting_tree.hpp>
 #include <transfer_sequences.hpp>
 
