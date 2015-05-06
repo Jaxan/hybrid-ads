@@ -1,6 +1,7 @@
 #include "splitting_tree.hpp"
 #include "partition.hpp"
 
+#include <algorithm>
 #include <cassert>
 #include <functional>
 #include <numeric>

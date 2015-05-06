@@ -3,6 +3,7 @@
 #include "splitting_tree.hpp"
 #include "write_tree_to_dot.hpp"
 
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 
