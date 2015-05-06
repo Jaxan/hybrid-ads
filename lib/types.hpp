@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stddef.h> // for size_t
 #include <vector>
 
 // We use size_ts for fast indexing. Note that there is little type safety here
