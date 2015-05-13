@@ -39,6 +39,13 @@ inline bool is_complete(const mealy & m){
 	return true;
 }
 
+inline bool defined(mealy const & m, state s, input i) {
+	if (s >= m.graph.size()) return false;
+	if (i >= m.graph[s].size()) return false;
+	if (m.graph[s][i].to == state(-1) || m.graph[s][i].output == output(-1)) return false;
+	return true;
+}
+
 inline mealy::edge apply(mealy const & m, state state, input input){
 	return m.graph[state][input];
 }

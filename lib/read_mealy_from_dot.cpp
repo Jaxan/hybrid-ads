@@ -49,6 +49,9 @@ mealy read_mealy_from_dot(std::istream & in, translation & t){
 		if(t.input_indices.count(input) < 1) t.input_indices[input] = t.max_input++;
 		if(t.output_indices.count(output) < 1) t.output_indices[output] = t.max_output++;
 
+		if(defined(m, state_indices[lh], t.input_indices[input]))
+			throw runtime_error("Nondeterministic machine");
+
 		// add edge
 		m.graph.resize(max_state);
 		auto & v = m.graph[state_indices[lh]];
