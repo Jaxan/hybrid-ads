@@ -1,9 +1,11 @@
-#include "read_mealy_from_dot.hpp"
+#include "read_mealy.hpp"
 #include "mealy.hpp"
 
 #include <boost/algorithm/string/trim.hpp>
 
+#include <cassert>
 #include <fstream>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 
@@ -11,6 +13,54 @@ using namespace std;
 
 static string easy_substr(string const & s, size_t begin, size_t end){
 	return s.substr(begin, end - begin);
+}
+
+mealy read_mealy_from_txt(std::istream & in) {
+	mealy m;
+
+	state max_state = 0;
+	input max_input = 0;
+	output max_output = 0;
+
+	string line;
+	while (getline(in, line)) {
+		state from, to;
+		input i;
+		output o;
+		string seperator;
+
+		stringstream ss(line);
+		ss >> from >> seperator >> i >> seperator >> o >> seperator >> to;
+
+		if (from >= max_state) max_state = from + 1;
+		if (to >= max_state) max_state = to + 1;
+		if (i >= max_input) max_input = i + 1;
+		if (o >= max_output) max_output = o + 1;
+
+		if (defined(m, from, i)) throw runtime_error("Nondeterministic machine");
+
+		m.graph.resize(max_state);
+		auto & v = m.graph[from];
+		v.resize(max_input);
+		v[i] = mealy::edge(to, o);
+
+		assert(defined(m, to, i));
+	}
+
+	m.graph_size = max_state;
+	m.input_size = max_input;
+	m.output_size = max_output;
+
+	if (m.graph_size == 0) throw runtime_error("Empty state set");
+	if (m.input_size == 0) throw runtime_error("Empty input set");
+	if (m.output_size == 0) throw runtime_error("Empty output set");
+	if (!is_complete(m)) throw runtime_error("Partial machine");
+	return m;
+}
+
+mealy read_mealy_from_txt(const std::string & filename) {
+	std::ifstream file(filename);
+	return read_mealy_from_txt(file);
 }
 
 mealy read_mealy_from_dot(std::istream & in, translation & t){
@@ -88,4 +138,40 @@ std::pair<mealy, translation> read_mealy_from_dot(const string & filename){
 	translation t;
 	const auto m = read_mealy_from_dot(filename, t);
 	return {move(m), move(t)};
+}
+
+
+template <typename T>
+std::vector<std::string> create_reverse_map_impl(std::map<std::string, T> const & indices) {
+	std::vector<std::string> ret(indices.size());
+	for (auto && p : indices) {
+		ret[p.second] = p.first;
+	}
+	return ret;
+}
+
+std::vector<string> create_reverse_map(const std::map<string, input> & indices) {
+	return create_reverse_map_impl(indices);
+}
+
+#if 0 // Note: input and output are equal types, so this would be a redecl
+std::vector<string> create_reverse_map(const std::map<string, output> & indices) {
+	return create_reverse_map_impl(indices);
+}
+#endif
+
+translation create_translation_for_mealy(const mealy & m) {
+	translation t;
+	t.max_input = m.input_size;
+	t.max_output = m.output_size;
+
+	for (input i = 0; i < t.max_input; ++i) {
+		t.input_indices[to_string(i)] = i;
+	}
+
+	for (output o = 0; o < t.max_output; ++o) {
+		t.output_indices[to_string(o)] = o;
+	}
+
+	return t;
 }

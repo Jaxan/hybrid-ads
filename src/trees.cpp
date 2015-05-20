@@ -1,5 +1,5 @@
 #include <adaptive_distinguishing_sequence.hpp>
-#include <read_mealy_from_dot.hpp>
+#include <read_mealy.hpp>
 #include <splitting_tree.hpp>
 #include <write_tree_to_dot.hpp>
 

@@ -1,6 +1,5 @@
 #include <mealy.hpp>
-#include <read_mealy_from_dot.hpp>
-#include <read_mealy_from_txt.hpp>
+#include <read_mealy.hpp>
 
 #include <algorithm>
 #include <fstream>

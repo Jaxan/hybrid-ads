@@ -1,6 +1,5 @@
 #include <adaptive_distinguishing_sequence.hpp>
-#include <read_mealy_from_dot.hpp>
-#include <read_mealy_from_txt.hpp>
+#include <read_mealy.hpp>
 #include <characterization_family.hpp>
 #include <separating_matrix.hpp>
 #include <trie.hpp>

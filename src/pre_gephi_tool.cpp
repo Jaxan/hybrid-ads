@@ -1,5 +1,5 @@
 #include <mealy.hpp>
-#include <read_mealy_from_dot.hpp>
+#include <read_mealy.hpp>
 #include <transfer_sequences.hpp>
 
 #include <boost/optional.hpp>
