@@ -1,5 +1,6 @@
 #include <mealy.hpp>
 #include <read_mealy_from_dot.hpp>
+#include <read_mealy_from_txt.hpp>
 
 #include <algorithm>
 #include <fstream>
@@ -9,7 +10,16 @@
 using namespace std;
 
 static void print_stats_for_machine(string filename){
-	const auto machine = read_mealy_from_dot(filename).first;
+	const auto machine = [&]{
+		if (filename.find(".txt") != string::npos) {
+			return read_mealy_from_txt(filename);
+		} else if (filename.find(".dot") != string::npos) {
+			return read_mealy_from_dot(filename).first;
+		}
+
+		clog << "warning: unrecognized file format, assuming dot";
+		return read_mealy_from_dot(filename).first;
+	}();
 
 	cout << "machine " << filename << " has\n";
 	cout << '\t' << machine.graph_size << " states\n";
@@ -18,7 +28,10 @@ static void print_stats_for_machine(string filename){
 }
 
 int main(int argc, char *argv[]){
-	if(argc != 2) return 37;
+	if(argc != 2) {
+		cerr << "usages: stats <filename>" << endl;
+		return 1;
+	}
 
 	const string filename = argv[1];
 	print_stats_for_machine(filename);

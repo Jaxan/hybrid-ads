@@ -3,6 +3,7 @@
 #include <mealy.hpp>
 #include <reachability.hpp>
 #include <read_mealy_from_dot.hpp>
+#include <read_mealy_from_txt.hpp>
 #include <characterization_family.hpp>
 #include <separating_matrix.hpp>
 #include <splitting_tree.hpp>
@@ -18,7 +19,10 @@ using namespace std;
 using time_logger = silent_timer;
 
 int main(int argc, char *argv[]) try {
-	if(argc != 4) return 1;
+	if(argc != 4) {
+		cerr << "usage: main <filename> <max k> <stream|stop>" << endl;
+		return 1;
+	}
 	const string filename = argv[1];
 	const bool use_stdio = filename == "--";
 
@@ -39,9 +43,17 @@ int main(int argc, char *argv[]) try {
 		time_logger t("reading file " + filename);
 		if(use_stdio){
 			return read_mealy_from_dot(cin);
-		} else {
+		}
+		if(filename.find(".txt") != string::npos) {
+			const auto m = read_mealy_from_txt(filename);
+			const auto t = create_translation_for_mealy(m);
+			return make_pair(move(m), move(t));
+		} else if (filename.find(".dot") != string::npos) {
 			return read_mealy_from_dot(filename);
 		}
+
+		clog << "warning: unrecognized file format, assuming .dot\n";
+		return read_mealy_from_dot(filename);
 	}();
 
 	const auto & machine = reachable_submachine(move(machine_and_translation.first), 0);
@@ -127,59 +139,12 @@ int main(int argc, char *argv[]) try {
 		for(auto && x : w) cout << inputs[x] << ' ';
 	};
 
-// This part is commented out, as the polymorphic lambdas are kinda important
-#if 0
-	if(statistics){
-		const auto adder = [](auto const & x){
-			return [&x](auto const & l, auto const & r) { return l + x(r); };
-		};
-
-		const auto size = adder([](auto const & r) { return r.size(); });
-
-		const auto p_size = transfer_sequences.size();
-		const auto p_total = accumulate(begin(transfer_sequences), end(transfer_sequences), 0, size);
-		const auto p_avg = p_total / double(p_size);
-
-		cout << "Prefixes:\n";
-		cout << "\tsize\t" << p_size << '\n';
-		cout << "\ttotal\t" << p_total << '\n';
-		cout << "\tavg\t" << p_avg << '\n';
-
-		const auto w_fam_size = seperating_family.size();
-		const auto w_fam_total = accumulate(begin(seperating_family), end(seperating_family), 0, size);
-		const auto w_fam_avg = w_fam_total / double(w_fam_size);
-
-		const auto w_total = accumulate(begin(seperating_family), end(seperating_family), 0, adder([&size](auto const & r){
-			return accumulate(begin(r), end(r), 0, size);
-		}));
-		const auto w_avg = w_total / double(w_fam_total);
-
-		cout << "Suffixes:\n";
-		cout << "\tsize\t" << w_fam_total << '\n';
-		cout << "\tavg\t" << w_fam_avg << '\n';
-		cout << "\ttotal\t" << w_total << '\n';
-		cout << "\tavg\t" << w_avg << '\n';
-
-		cout << "Total tests (approximately):\n";
-		double total = machine.graph_size * 1 * w_fam_avg;
-		double length = p_avg + 0 + w_avg;
-		for(size_t k = 0; k <= k_max; ++k){
-			cout << "\tk = " << k << "\t"
-				 << setw(16) << size_t(total)  << " * "
-				 << setw(3)  << size_t(length) << " = "
-				 << setw(20) << size_t(total * length) << endl;
-			total *= machine.input_size;
-			length += 1;
-		}
-	}
-#endif
-
 	if(streaming){
 		time_logger t("outputting all preset tests");
 
 		vector<word> all_sequences(1);
 		for(size_t k = 0; k <= k_max; ++k){
-			cerr << "*** K = " << k << endl;
+			clog << "*** K = " << k << endl;
 			for(state s = 0; s < machine.graph_size; ++s){
 				const auto prefix = transfer_sequences[s];
 
@@ -199,7 +164,7 @@ int main(int argc, char *argv[]) try {
 
 	if(random_part){
 		time_logger t("outputting all random tests");
-		cerr << "*** K > " << k_max << endl;
+		clog << "*** K > " << k_max << endl;
 
 		std::random_device rd;
 		std::mt19937 generator(rd());

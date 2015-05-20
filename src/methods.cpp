@@ -1,5 +1,6 @@
 #include <adaptive_distinguishing_sequence.hpp>
 #include <read_mealy_from_dot.hpp>
+#include <read_mealy_from_txt.hpp>
 #include <characterization_family.hpp>
 #include <separating_matrix.hpp>
 #include <trie.hpp>
@@ -13,14 +14,26 @@
 using namespace std;
 
 int main(int argc, char * argv[]) {
-	if (argc != 4) return 1;
+	if (argc != 4) {
+		cerr << "usage: methods <file> <mode> <k_max>\n";
+		return 1;
+	}
 
 	const string filename = argv[1];
 	const string mode = argv[2];
 	const bool use_no_LY = mode == "--W-method";
 	const size_t k_max = std::stoul(argv[3]);
 
-	const auto machine = read_mealy_from_dot(filename).first;
+	const auto machine = [&]{
+		if (filename.find(".txt") != string::npos) {
+			return read_mealy_from_txt(filename);
+		} else if (filename.find(".dot") != string::npos) {
+			return read_mealy_from_dot(filename).first;
+		}
+
+		clog << "warning: unrecognized file format, assuming dot";
+		return read_mealy_from_dot(filename).first;
+	}();
 
 	auto sequence_fut = async([&] {
 		if (use_no_LY) {
