@@ -7,6 +7,7 @@
 #include <characterization_family.hpp>
 #include <separating_matrix.hpp>
 #include <splitting_tree.hpp>
+#include <test_suite.hpp>
 #include <transfer_sequences.hpp>
 
 #include <future>
@@ -34,13 +35,12 @@ int main(int argc, char *argv[]) try {
 	const bool random_part = streaming && mode != "stop";
 
 	const bool use_distinguishing_sequence = true;
-	const bool use_relevances = false;
 	const bool randomize_prefixes = true;
 	const bool randomize_hopcroft = true;
 	const bool randomize_lee_yannakakis = true;
 
 	const auto machine_and_translation = [&]{
-		time_logger t("reading file " + filename);
+		time_logger t_("reading file " + filename);
 		if(use_stdio){
 			return read_mealy_from_dot(cin);
 		}
@@ -65,12 +65,12 @@ int main(int argc, char *argv[]) try {
 			return create_splitting_tree(machine, randomize_hopcroft ? randomized_hopcroft_style : hopcroft_style);
 		}();
 
-		const auto all_pair_seperating_sequences = [&]{
+		const auto all_pair_seperating_sequences_ = [&]{
 			time_logger t("gathering all seperating sequences");
 			return create_all_pair_seperating_sequences(splitting_tree_hopcroft.root);
 		}();
 
-		return all_pair_seperating_sequences;
+		return all_pair_seperating_sequences_;
 	}();
 
 	auto sequence = [&]{
@@ -82,12 +82,12 @@ int main(int argc, char *argv[]) try {
 				return result(machine.graph_size);
 		}();
 
-		const auto sequence = [&]{
+		const auto sequence_ = [&]{
 			time_logger t("Lee & Yannakakis II");
 			return create_adaptive_distinguishing_sequence(tree);
 		}();
 
-		return sequence;
+		return sequence_;
 	}();
 
 	auto transfer_sequences = [&]{
@@ -103,26 +103,6 @@ int main(int argc, char *argv[]) try {
 		return create_reverse_map(translation.input_indices);
 	}();
 
-	auto relevant_inputs = [&]{
-		time_logger t("determining relevance of inputs");
-		vector<discrete_distribution<input>> distributions(machine.graph_size);
-
-		for(state s = 0; s < machine.graph_size; ++s){
-			vector<double> r_cache(machine.input_size, 1);
-			if(use_relevances){
-				for(input i = 0; i < machine.input_size; ++i){
-					//const auto test1 = apply(machine, s, i).output != machine.output_indices.at("quiescence");
-					const auto test2 = apply(machine, s, i).to != s;
-					r_cache[i] = 0.1 + test2;
-				}
-			}
-
-			// VS 2013 is missing some c++11 support: http://stackoverflow.com/questions/21959404/initialising-stddiscrete-distribution-in-vs2013
-			size_t i = 0;
-			distributions[s] = discrete_distribution<input>(r_cache.size(), r_cache.front(), r_cache.back(), [&r_cache, &i](double) { return r_cache[i++]; });
-		}
-		return distributions;
-	}();
 
 	// const auto all_pair_seperating_sequences = all_pair_seperating_sequences_fut.get();
 	// const auto sequence = sequence_fut.get();
@@ -135,71 +115,16 @@ int main(int argc, char *argv[]) try {
 	// const auto transfer_sequences = transfer_sequences_fut.get();
 	// const auto inputs = inputs_fut.get();
 
-	const auto print_word = [&](vector<input> w){
-		for(auto && x : w) cout << inputs[x] << ' ';
-	};
-
 	if(streaming){
 		time_logger t("outputting all preset tests");
-
-		vector<word> all_sequences(1);
-		for(size_t k = 0; k <= k_max; ++k){
-			clog << "*** K = " << k << endl;
-			for(state s = 0; s < machine.graph_size; ++s){
-				const auto prefix = transfer_sequences[s];
-
-				for(auto && suffix : seperating_family[s].local_suffixes){
-					for(auto && r : all_sequences){
-						print_word(prefix);
-						print_word(r);
-						print_word(suffix);
-						cout << endl;
-					}
-				}
-			}
-
-			all_sequences = all_seqs(0, machine.input_size, all_sequences);
-		}
+		test(machine, transfer_sequences, seperating_family, k_max, default_writer(inputs));
 	}
 
 	if(random_part){
 		time_logger t("outputting all random tests");
-		clog << "*** K > " << k_max << endl;
-
-		std::random_device rd;
-		std::mt19937 generator(rd());
-
-		uniform_int_distribution<size_t> prefix_selection(0, transfer_sequences.size()-1);
-		uniform_int_distribution<> unfair_coin(0, 2); // expected flips is p / (p-1)^2, where p is succes probability
-		uniform_int_distribution<size_t> suffix_selection;
-		// auto relevant_inputs = relevant_inputs_fut.get();
-
-		while(true){
-			state current_state = 0;
-
-			const auto & p = transfer_sequences[prefix_selection(generator)];
-			current_state = apply(machine, current_state, begin(p), end(p)).to;
-
-			vector<input> m;
-			m.reserve(k_max + 2);
-			size_t minimal_size = k_max + 1;
-			while(minimal_size || unfair_coin(generator)){
-				input i = relevant_inputs[current_state](generator);
-				m.push_back(i);
-				current_state = apply(machine, current_state, i).to;
-				if(minimal_size) minimal_size--;
-			}
-
-			using params = uniform_int_distribution<size_t>::param_type;
-			const auto & suffixes = seperating_family[current_state].local_suffixes;
-			const auto & s = suffixes[suffix_selection(generator, params{0, suffixes.size()-1})];
-
-			print_word(p);
-			print_word(m);
-			print_word(s);
-			cout << endl;
-		}
+		randomized_test(machine, transfer_sequences, seperating_family, k_max+1, default_writer(inputs));
 	}
+
 } catch (exception const & e) {
 	cerr << "Exception thrown: " << e.what() << endl;
 	return 1;
