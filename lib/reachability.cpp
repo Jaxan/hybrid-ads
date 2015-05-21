@@ -29,7 +29,7 @@ mealy reachable_submachine(const mealy& in, state start) {
 
 		for (input i = 0; i < in.input_size; ++i) {
 			const auto ret = apply(in, s, i);
-			const output o = ret.output;
+			const output o = ret.out;
 			const state t = ret.to;
 
 			if (!new_state.count(t)) new_state[t] = max_state++;

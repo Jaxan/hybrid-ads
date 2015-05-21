@@ -24,7 +24,7 @@ static void test() {
 	word w5 = {5, 5, 3};
 	word w6 = {5, 5, 3, 1};
 
-	trie t;
+	trie<unsigned> t;
 	check(t.insert(w1));
 	check(!t.insert(w1));
 	check(t.insert(w2));
@@ -77,7 +77,7 @@ static void performance() {
 	using seconds = std::chrono::duration<double>;
 
 	auto t_start = clock::now();
-	trie t;
+	trie<unsigned> t;
 	for (auto&& w : corpus) t.insert(w);
 	auto t_end = clock::now();
 

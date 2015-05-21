@@ -102,7 +102,7 @@ result create_splitting_tree(const mealy & g, options opt) {
 				    end(boom.states), [symbol, depth, &g, &update_succession](state state) {
 				    	const auto r = apply(g, state, symbol);
 				    	update_succession(state, r.to, depth);
-				    	return r.output;
+				    	return r.out;
 				    }, Q);
 
 				// no split -> continue with other input symbols
@@ -144,7 +144,7 @@ result create_splitting_tree(const mealy & g, options opt) {
 				    end(boom.states), [word, depth, &g, &update_succession](state state) {
 				    	const mealy::edge r = apply(g, state, word.begin(), word.end());
 				    	update_succession(state, r.to, depth);
-				    	return r.output;
+				    	return r.out;
 				    }, Q);
 
 				// not a valid split -> continue

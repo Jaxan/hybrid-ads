@@ -4,9 +4,9 @@
 #include <vector>
 
 // We use size_ts for fast indexing. Note that there is little type safety here
-using state = size_t;
-using input = size_t;
-using output = size_t;
+using state = uint16_t;
+using input = uint16_t;
+using output = uint16_t;
 
 using word = std::vector<input>;
 

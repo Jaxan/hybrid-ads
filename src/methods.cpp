@@ -79,7 +79,7 @@ int main(int argc, char * argv[]) {
 	const auto prefixes = prefixes_fut.get();
 	const auto middles = middles_fut.get();
 	const auto suffixes = suffixes_fut.get();
-	trie test_suite;
+	trie<input> test_suite;
 
 	clog << "start testing" << endl;
 	const state start = 0;

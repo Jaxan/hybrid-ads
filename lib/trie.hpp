@@ -10,10 +10,10 @@
 ///
 /// \brief A Trie datastructure used to remove prefixes in a set of words
 ///
-/// The datastructure only works for words over size_t. In principle the symbols
-/// can be unbounded, however having very large symbols degrades the performance
-/// a lot. Some random testing shows that for symbols <= 50 the performance is
-/// similar to std::set (which is solving a different problem).
+/// The datastructure only works for words over integral unsigned types. In principle the symbols
+/// can be unbounded, however having very large symbols degrades the performance a lot. Some random
+/// testing shows that for symbols <= 50 the performance is similar to std::set (which is solving a
+/// different problem).
 ///
 /// Tests : 1M words, avg words length 4 (geometric dist.), alphabet 50 symbols
 /// trie reduction 58% in 1.15s
@@ -23,7 +23,9 @@
 /// There are, however, "internal iterators" exposed as a for_each() member
 /// function (if only we had coroutines already...)
 ///
-struct trie {
+template <typename T> struct trie {
+	static_assert(std::is_integral<T>::value && std::is_unsigned<T>::value, "");
+
 	/// \brief Inserts a word (given by iterators \p begin and \p end)
 	/// \returns true if the element was inserted, false if already there
 	template <typename Iterator> bool insert(Iterator && begin, Iterator && end) {
@@ -46,19 +48,17 @@ struct trie {
 
 	/// \brief Applies \p function to all word (not to the prefixes)
 	template <typename Fun> void for_each(Fun && function) const {
-		std::vector<size_t> word;
+		std::vector<T> word;
 		return for_each_impl(std::forward<Fun>(function), word);
 	}
 
 	/// \brief Empties the complete set
-	void clear() {
-		branches.clear();
-	}
+	void clear() { branches.clear(); }
 
   private:
-	template <typename Fun> void for_each_impl(Fun && function, std::vector<size_t> & word) const {
+	template <typename Fun> void for_each_impl(Fun && function, std::vector<T> & word) const {
 		size_t count = 0;
-		for (size_t i = 0; i < branches.size(); ++i) {
+		for (T i = 0; i < branches.size(); ++i) {
 			auto const & b = branches[i];
 			if (b) {
 				++count;
@@ -80,7 +80,19 @@ struct trie {
 
 /// \brief Flattens a trie \p t
 /// \returns an array of words (without the prefixes)
-std::vector<std::vector<size_t>> flatten(trie const & t);
+template <typename T> std::vector<std::vector<T>> flatten(trie<T> const & t) {
+	std::vector<std::vector<T>> ret;
+	t.for_each([&ret](auto && w) { ret.push_back(w); });
+	return ret;
+}
 
 /// \brief Returns size and total sum of symbols
-std::pair<size_t, size_t> total_size(trie const & t);
+template <typename T> std::pair<size_t, size_t> total_size(trie<T> const & t) {
+	size_t count = 0;
+	size_t total_count = 0;
+	t.for_each([&count, &total_count](auto && w) {
+		++count;
+		total_count += w.size();
+	});
+	return {count, total_count};
+}

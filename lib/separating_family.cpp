@@ -16,7 +16,7 @@ separating_family create_separating_family(const adaptive_distinguishing_sequenc
                                            const splitting_tree & separating_sequences) {
 	const auto N = sequence.CI.size();
 
-	vector<trie> suffixes(N);
+	vector<trie<input>> suffixes(N);
 	separating_family ret(N);
 
 	// First we accumulate the kind-of-UIOs and the separating words we need. We will do this with a

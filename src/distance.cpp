@@ -95,7 +95,7 @@ int main(int argc, char * argv[]) {
 			auto q1 = apply(m1, s1, i);
 			auto q2 = apply(m2, s2, i);
 
-			if (q1.output != q2.output) {
+			if (q1.out != q2.out) {
 				current_counterexamples++;
 			}
 
