@@ -1,4 +1,6 @@
-#include "characterization_family.hpp"
+#include "separating_family.hpp"
+#include "adaptive_distinguishing_sequence.hpp"
+#include "splitting_tree.hpp"
 #include "trie.hpp"
 
 #include <boost/range/algorithm.hpp>
@@ -10,12 +12,12 @@
 
 using namespace std;
 
-characterization_family create_seperating_family(const adaptive_distinguishing_sequence & sequence,
-                                                 const splitting_tree & separating_sequences) {
+separating_family create_separating_family(const adaptive_distinguishing_sequence & sequence,
+                                           const splitting_tree & separating_sequences) {
 	const auto N = sequence.CI.size();
 
 	vector<trie> suffixes(N);
-	characterization_family ret(N);
+	separating_family ret(N);
 
 	// First we accumulate the kind-of-UIOs and the separating words we need. We will do this with a
 	// breath first search. If we encouter a set of states which is not a singleton, we add
@@ -40,7 +42,8 @@ characterization_family create_seperating_family(const adaptive_distinguishing_s
 				const auto s = p.second;
 				states[s] = true;
 			}
-			const auto root = lca(separating_sequences, [&states](auto z) -> bool { return states[z]; });
+			const auto root
+			    = lca(separating_sequences, [&states](auto z) -> bool { return states[z]; });
 
 			vector<word> stack_of_words;
 			const function<void(splitting_tree const &)> recursor = [&](splitting_tree const & n) {
@@ -53,7 +56,7 @@ characterization_family create_seperating_family(const adaptive_distinguishing_s
 						}
 					}
 				} else {
-					if (n.mark > 1) stack_of_words.push_back(n.seperator);
+					if (n.mark > 1) stack_of_words.push_back(n.separator);
 					for (auto const & c : n.children) {
 						recursor(c);
 					}
@@ -68,9 +71,7 @@ characterization_family create_seperating_family(const adaptive_distinguishing_s
 				const auto s = p.second;
 				auto & current_suffixes = suffixes[s];
 
-				// they are the same (FIXME)
 				ret[s].local_suffixes = flatten(current_suffixes);
-				ret[s].global_suffixes = flatten(current_suffixes);
 				current_suffixes.clear();
 			}
 

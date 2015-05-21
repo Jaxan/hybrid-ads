@@ -1,16 +1,26 @@
 #include <adaptive_distinguishing_sequence.hpp>
 #include <read_mealy.hpp>
-#include <characterization_family.hpp>
-#include <separating_matrix.hpp>
-#include <trie.hpp>
+#include <separating_family.hpp>
 #include <splitting_tree.hpp>
 #include <transfer_sequences.hpp>
+#include <trie.hpp>
 
 #include <future>
 #include <string>
 #include <iostream>
 
 using namespace std;
+
+enum Method {
+	hsi_method,
+	ds_plus_method,
+};
+
+static Method parse_method(string const & s) {
+	if (s == "--W-method") return hsi_method;
+	if (s == "--DS-method") return ds_plus_method;
+	throw runtime_error("No valid method specified");
+}
 
 int main(int argc, char * argv[]) {
 	if (argc != 4) {
@@ -19,11 +29,10 @@ int main(int argc, char * argv[]) {
 	}
 
 	const string filename = argv[1];
-	const string mode = argv[2];
-	const bool use_no_LY = mode == "--W-method";
+	const Method method = parse_method(argv[2]);
 	const size_t k_max = std::stoul(argv[3]);
 
-	const auto machine = [&]{
+	const auto machine = [&] {
 		if (filename.find(".txt") != string::npos) {
 			return read_mealy_from_txt(filename);
 		} else if (filename.find(".dot") != string::npos) {
@@ -35,7 +44,7 @@ int main(int argc, char * argv[]) {
 	}();
 
 	auto sequence_fut = async([&] {
-		if (use_no_LY) {
+		if (method == hsi_method) {
 			return create_adaptive_distinguishing_sequence(result(machine.graph_size));
 		}
 		const auto tree = create_splitting_tree(machine, randomized_lee_yannakakis_style);
@@ -63,7 +72,7 @@ int main(int argc, char * argv[]) {
 
 	clog << "getting sequence and pairs" << endl;
 	auto suffixes_fut = async([&] {
-		return create_seperating_family(sequence_fut.get(), pairs_fut.get());
+		return create_separating_family(sequence_fut.get(), pairs_fut.get());
 	});
 
 	clog << "getting prefixes, middles and suffixes" << endl;
@@ -81,8 +90,7 @@ int main(int argc, char * argv[]) {
 		for (auto && m : middles) {
 			const state s2 = apply(machine, s1, begin(m), end(m)).to;
 			const word w2 = concat(w1, m);
-			const auto & suffixes_for_state = (m.size() == k_max) ? suffixes[s2].local_suffixes
-			                                                      : suffixes[s2].global_suffixes;
+			const auto & suffixes_for_state = suffixes[s2].local_suffixes;
 			for (auto && s : suffixes_for_state) {
 				word test = concat(w2, s);
 				test_suite.insert(test);

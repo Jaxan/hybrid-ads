@@ -24,9 +24,9 @@ static const auto id = [](auto x) { return x; };
 void write_splitting_tree_to_dot(const splitting_tree & root, ostream & out_) {
 	write_tree_to_dot(root, [](const splitting_tree & node, ostream & out) {
 		print_vec(out, node.states, " ", id);
-		if (!node.seperator.empty()) {
+		if (!node.separator.empty()) {
 			out << "\\n";
-			print_vec(out, node.seperator, " ", id);
+			print_vec(out, node.separator, " ", id);
 		}
 	}, out_);
 }

@@ -112,7 +112,7 @@ result create_splitting_tree(const mealy & g, options opt) {
 				if (opt.check_validity && !is_valid(new_blocks, symbol)) continue;
 
 				// a succesful split, update partition and add the children
-				boom.seperator = {symbol};
+				boom.separator = {symbol};
 				add_push_new_block(new_blocks, boom);
 
 				goto has_split;
@@ -135,10 +135,10 @@ result create_splitting_tree(const mealy & g, options opt) {
 				if (oboom.children.empty()) continue;
 
 				// If we want to enforce the right order, we should :D
-				if (opt.assert_minimal_order && oboom.seperator.size() != current_order) continue;
+				if (opt.assert_minimal_order && oboom.separator.size() != current_order) continue;
 
 				// possibly a succesful split, construct the children
-				const vector<input> word = concat(vector<input>(1, symbol), oboom.seperator);
+				const vector<input> word = concat(vector<input>(1, symbol), oboom.separator);
 				const auto new_blocks = partition_(
 				    begin(boom.states),
 				    end(boom.states), [word, depth, &g, &update_succession](state state) {
@@ -153,7 +153,7 @@ result create_splitting_tree(const mealy & g, options opt) {
 				assert(new_blocks.size() > 1);
 
 				// update partition and add the children
-				boom.seperator = word;
+				boom.separator = word;
 				add_push_new_block(new_blocks, boom);
 
 				goto has_split;

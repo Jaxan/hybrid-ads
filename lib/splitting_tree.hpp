@@ -10,7 +10,7 @@ struct splitting_tree {
 
 	std::vector<state> states;
 	std::vector<splitting_tree> children;
-	word seperator;
+	word separator;
 	size_t depth = 0;
 	mutable int mark = 0; // used for some algorithms...
 };

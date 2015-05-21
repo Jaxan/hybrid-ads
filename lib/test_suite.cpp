@@ -7,7 +7,7 @@
 using namespace std;
 
 void test(const mealy & specification, const transfer_sequences & prefixes,
-          const characterization_family & separating_family, size_t k_max, const writer & output) {
+          const separating_family & separating_family, size_t k_max, const writer & output) {
 	vector<word> all_sequences(1);
 
 	for (size_t k = 0; k <= k_max; ++k) {
@@ -33,7 +33,7 @@ void test(const mealy & specification, const transfer_sequences & prefixes,
 }
 
 void randomized_test(const mealy & specification, const transfer_sequences & prefixes,
-                     const characterization_family & separating_family, size_t min_k,
+                     const separating_family & separating_family, size_t min_k,
                      const writer & output) {
 	clog << "*** K >= " << min_k << endl;
 

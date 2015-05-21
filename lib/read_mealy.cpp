@@ -27,10 +27,10 @@ mealy read_mealy_from_txt(std::istream & in) {
 		state from, to;
 		input i;
 		output o;
-		string seperator;
+		string separator;
 
 		stringstream ss(line);
-		ss >> from >> seperator >> i >> seperator >> o >> seperator >> to;
+		ss >> from >> separator >> i >> separator >> o >> separator >> to;
 
 		if (from >= max_state) max_state = from + 1;
 		if (to >= max_state) max_state = to + 1;

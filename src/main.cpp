@@ -3,8 +3,7 @@
 #include <mealy.hpp>
 #include <reachability.hpp>
 #include <read_mealy.hpp>
-#include <characterization_family.hpp>
-#include <separating_matrix.hpp>
+#include <separating_family.hpp>
 #include <splitting_tree.hpp>
 #include <test_suite.hpp>
 #include <transfer_sequences.hpp>
@@ -58,7 +57,7 @@ int main(int argc, char *argv[]) try {
 	const auto & machine = reachable_submachine(move(machine_and_translation.first), 0);
 	const auto & translation = machine_and_translation.second;
 
-	auto all_pair_seperating_sequences = [&]{
+	auto all_pair_separating_sequences = [&]{
 		const auto splitting_tree_hopcroft = [&]{
 			time_logger t("creating hopcroft splitting tree");
 			return create_splitting_tree(machine, randomize_hopcroft ? randomized_hopcroft_style : hopcroft_style);
@@ -102,9 +101,9 @@ int main(int argc, char *argv[]) try {
 	// const auto all_pair_seperating_sequences = all_pair_seperating_sequences_fut.get();
 	// const auto sequence = sequence_fut.get();
 
-	const auto seperating_family = [&]{
+	const auto separating_family = [&]{
 		time_logger t("making seperating family");
-		return create_seperating_family(sequence, all_pair_seperating_sequences);
+		return create_separating_family(sequence, all_pair_separating_sequences);
 	}();
 
 	// const auto transfer_sequences = transfer_sequences_fut.get();
@@ -112,12 +111,12 @@ int main(int argc, char *argv[]) try {
 
 	if(streaming){
 		time_logger t("outputting all preset tests");
-		test(machine, transfer_sequences, seperating_family, k_max, default_writer(inputs));
+		test(machine, transfer_sequences, separating_family, k_max, default_writer(inputs));
 	}
 
 	if(random_part){
 		time_logger t("outputting all random tests");
-		randomized_test(machine, transfer_sequences, seperating_family, k_max+1, default_writer(inputs));
+		randomized_test(machine, transfer_sequences, separating_family, k_max+1, default_writer(inputs));
 	}
 
 } catch (exception const & e) {
