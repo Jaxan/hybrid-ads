@@ -64,12 +64,8 @@ int main(int argc, char *argv[]) try {
 			return create_splitting_tree(machine, randomize_hopcroft ? randomized_hopcroft_style : hopcroft_style);
 		}();
 
-		const auto all_pair_seperating_sequences_ = [&]{
-			time_logger t("gathering all seperating sequences");
-			return create_all_pair_seperating_sequences(splitting_tree_hopcroft.root);
-		}();
 
-		return all_pair_seperating_sequences_;
+		return splitting_tree_hopcroft.root;
 	}();
 
 	auto sequence = [&]{

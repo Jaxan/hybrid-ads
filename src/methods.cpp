@@ -44,7 +44,7 @@ int main(int argc, char * argv[]) {
 
 	auto pairs_fut = async([&] {
 		const auto tree = create_splitting_tree(machine, randomized_min_hopcroft_style);
-		return create_all_pair_seperating_sequences(tree.root);
+		return tree.root;
 	});
 
 	auto prefixes_fut = async([&] {

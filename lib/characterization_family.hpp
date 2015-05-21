@@ -26,4 +26,4 @@ using characterization_family = std::vector<characterization_set>;
 /// \brief Creates the characterization family from the results of the LY algorithm
 /// If the sequence is complete, we do not need the separating_matrix
 characterization_family create_seperating_family(const adaptive_distinguishing_sequence & sequence,
-                                                 const separating_matrix & sep_matrix);
+                                                 const splitting_tree & separating_sequences);

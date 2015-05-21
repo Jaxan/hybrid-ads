@@ -11,12 +11,11 @@
 using namespace std;
 
 characterization_family create_seperating_family(const adaptive_distinguishing_sequence & sequence,
-                                                 const separating_matrix & sep_matrix) {
+                                                 const splitting_tree & separating_sequences) {
 	const auto N = sequence.CI.size();
 
 	vector<trie> suffixes(N);
 	characterization_family ret(N);
-
 
 	// First we accumulate the kind-of-UIOs and the separating words we need. We will do this with a
 	// breath first search. If we encouter a set of states which is not a singleton, we add
@@ -36,18 +35,24 @@ characterization_family create_seperating_family(const adaptive_distinguishing_s
 				suffixes[state].insert(word);
 			}
 
-			trie all_global_separating_words;
-
+			// for each distinct pair, look up the lca in the splitting tree and add that word.
+			// This gives a very bad complexity! (cubic I guess)
+			// I believe this can be fixed to quadratic
 			for (auto && p : node.CI) {
 				for (auto && q : node.CI) {
 					const auto s = p.second;
 					const auto t = q.second;
-					if (s == t) continue;
+					if (s <= t) continue;
 
-					const auto & sep_word = sep_matrix[s][t];
+					vector<bool> states(N, false);
+					states[s] = states[t] = true;
+
+					const auto root = lca(separating_sequences,
+					                      [&states](auto z) -> bool { return states[z]; });
+					const auto & sep_word = root.seperator;
 
 					suffixes[s].insert(sep_word);
-					all_global_separating_words.insert(sep_word);
+					suffixes[t].insert(sep_word);
 				}
 			}
 
@@ -56,14 +61,8 @@ characterization_family create_seperating_family(const adaptive_distinguishing_s
 				const auto s = p.second;
 				auto & current_suffixes = suffixes[s];
 
-				// local suffixes are done by now
+				// they are the same (FIXME)
 				ret[s].local_suffixes = flatten(current_suffixes);
-
-				// add the global ones
-				all_global_separating_words.for_each(
-					[&current_suffixes](auto w) { current_suffixes.insert(w); });
-
-				// and fix them
 				ret[s].global_suffixes = flatten(current_suffixes);
 				current_suffixes.clear();
 			}
