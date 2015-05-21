@@ -33,14 +33,15 @@ void test(const mealy & specification, const transfer_sequences & prefixes,
 }
 
 void randomized_test(const mealy & specification, const transfer_sequences & prefixes,
-                     const separating_family & separating_family, size_t min_k,
+                     const separating_family & separating_family, size_t min_k, size_t rnd_length,
                      const writer & output) {
 	clog << "*** K >= " << min_k << endl;
 
 	std::random_device rd;
 	std::mt19937 generator(rd());
 
-	uniform_int_distribution<> unfair_coin(0, 2);
+	// https://en.wikipedia.org/wiki/Geometric_distribution we have the random variable Y here
+	uniform_int_distribution<> unfair_coin(0, rnd_length);
 	uniform_int_distribution<size_t> prefix_selection(0, prefixes.size() - 1);
 	uniform_int_distribution<size_t> suffix_selection;
 	uniform_int_distribution<input> input_selection(0, specification.input_size - 1);

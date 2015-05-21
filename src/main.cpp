@@ -18,19 +18,19 @@ using namespace std;
 using time_logger = silent_timer;
 
 int main(int argc, char *argv[]) try {
-	if(argc != 4) {
-		cerr << "usage: main <filename> <max k> <stream|stop>" << endl;
+	if(argc != 5) {
+		cerr << "usage: main <filename> <max k> <rnd length> <all|fixed|random>" << endl;
 		return 1;
 	}
 	const string filename = argv[1];
 	const bool use_stdio = filename == "--";
 
-	// 0 => only states checks. 1 => transition checks. 2 or more => deep checks
 	const auto k_max = stoul(argv[2]);
+	const auto rnd_length = stoul(argv[3]);
 
-	const string mode = argv[3];
-	const bool streaming = mode == "stream" || mode == "stop";
-	const bool random_part = streaming && mode != "stop";
+	const string mode = argv[4];
+	const bool streaming = mode == "all" || mode == "fixed";
+	const bool random_part = mode == "all" || mode == "random";
 
 	const bool use_distinguishing_sequence = true;
 	const bool randomize_prefixes = true;
@@ -63,7 +63,6 @@ int main(int argc, char *argv[]) try {
 			return create_splitting_tree(machine, randomize_hopcroft ? randomized_hopcroft_style : hopcroft_style);
 		}();
 
-
 		return splitting_tree_hopcroft.root;
 	}();
 
@@ -93,21 +92,12 @@ int main(int argc, char *argv[]) try {
 		}
 	}();
 
-	auto inputs = [&]{
-		return create_reverse_map(translation.input_indices);
-	}();
-
-
-	// const auto all_pair_seperating_sequences = all_pair_seperating_sequences_fut.get();
-	// const auto sequence = sequence_fut.get();
+	auto inputs = create_reverse_map(translation.input_indices);
 
 	const auto separating_family = [&]{
 		time_logger t("making seperating family");
 		return create_separating_family(sequence, all_pair_separating_sequences);
 	}();
-
-	// const auto transfer_sequences = transfer_sequences_fut.get();
-	// const auto inputs = inputs_fut.get();
 
 	if(streaming){
 		time_logger t("outputting all preset tests");
@@ -116,7 +106,8 @@ int main(int argc, char *argv[]) try {
 
 	if(random_part){
 		time_logger t("outputting all random tests");
-		randomized_test(machine, transfer_sequences, separating_family, k_max+1, default_writer(inputs));
+		const auto k_max_ = streaming ? k_max + 1 : 0;
+		randomized_test(machine, transfer_sequences, separating_family, k_max_, rnd_length, default_writer(inputs));
 	}
 
 } catch (exception const & e) {
