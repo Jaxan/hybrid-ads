@@ -23,7 +23,7 @@ characterization_family create_seperating_family(const adaptive_distinguishing_s
 	stack<pair<word, reference_wrapper<const adaptive_distinguishing_sequence>>> work;
 	work.push({{}, sequence});
 	while (!work.empty()) {
-		auto word = work.top().first;
+		auto uio = work.top().first;
 		const adaptive_distinguishing_sequence & node = work.top().second;
 		work.pop();
 
@@ -32,29 +32,36 @@ characterization_family create_seperating_family(const adaptive_distinguishing_s
 		if (node.children.empty()) {
 			for (auto && p : node.CI) {
 				const auto state = p.second;
-				suffixes[state].insert(word);
+				suffixes[state].insert(uio);
 			}
 
-			// for each distinct pair, look up the lca in the splitting tree and add that word.
-			// This gives a very bad complexity! (cubic I guess)
-			// I believe this can be fixed to quadratic
+			vector<bool> states(N, false);
 			for (auto && p : node.CI) {
-				for (auto && q : node.CI) {
-					const auto s = p.second;
-					const auto t = q.second;
-					if (s <= t) continue;
-
-					vector<bool> states(N, false);
-					states[s] = states[t] = true;
-
-					const auto root = lca(separating_sequences,
-					                      [&states](auto z) -> bool { return states[z]; });
-					const auto & sep_word = root.seperator;
-
-					suffixes[s].insert(sep_word);
-					suffixes[t].insert(sep_word);
-				}
+				const auto s = p.second;
+				states[s] = true;
 			}
+			const auto root = lca(separating_sequences, [&states](auto z) -> bool { return states[z]; });
+
+			vector<word> stack_of_words;
+			const function<void(splitting_tree const &)> recursor = [&](splitting_tree const & n) {
+				if (n.children.empty()) {
+					for (state s : n.states) {
+						if (states[s]) {
+							for (auto const & w : stack_of_words) {
+								suffixes[s].insert(w);
+							}
+						}
+					}
+				} else {
+					if (n.mark > 1) stack_of_words.push_back(n.seperator);
+					for (auto const & c : n.children) {
+						recursor(c);
+					}
+					if (n.mark > 1) stack_of_words.pop_back();
+				}
+			};
+
+			recursor(root);
 
 			// Finalize the suffixes
 			for (auto && p : node.CI) {
@@ -71,8 +78,8 @@ characterization_family create_seperating_family(const adaptive_distinguishing_s
 		}
 
 		// add some work
-		for (auto && i : node.word) word.push_back(i);        // extend the word
-		for (auto && c : node.children) work.push({word, c}); // and visit the children with word
+		for (auto && i : node.word) uio.push_back(i);        // extend the word
+		for (auto && c : node.children) work.push({uio, c}); // and visit the children with word
 	}
 
 	return ret;
