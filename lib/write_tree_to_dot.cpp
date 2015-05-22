@@ -18,8 +18,13 @@ void print_vec(ostream & out, const vector<T> & x, const string & d, Fun && f) {
 	while (it != end(x)) out << d << f(*it++);
 }
 
-static const auto id = [](auto x) { return x; };
+struct id_functor {
+	id_functor(){}
+	template <typename T>
+	T operator()(T const & x) const { return x; }
+};
 
+static const id_functor id;
 
 void write_splitting_tree_to_dot(const splitting_tree & root, ostream & out_) {
 	write_tree_to_dot(root, [](const splitting_tree & node, ostream & out) {
@@ -42,10 +47,10 @@ void write_adaptive_distinguishing_sequence_to_dot(const adaptive_distinguishing
 	size_t overflows = 0;
 	write_tree_to_dot(root, [&symbols, &overflows](const adaptive_distinguishing_sequence & node, ostream & out) {
 		if (!node.word.empty()) {
-			print_vec(out, node.word, " ", [&symbols](auto x){ return "I" + symbols[x]; });
+			print_vec(out, node.word, " ", [&symbols](input x){ return "I" + symbols[x]; });
 		} else {
 			vector<state> I(node.CI.size());
-			transform(begin(node.CI), end(node.CI), begin(I), [](auto p){ return p.second; });
+			transform(begin(node.CI), end(node.CI), begin(I), [](pair<state, state> p){ return p.second; });
 			if (I.size() < 7) {
 				out << '{';
 				print_vec(out, I, ", ", id);

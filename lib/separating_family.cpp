@@ -43,7 +43,7 @@ separating_family create_separating_family(const adaptive_distinguishing_sequenc
 				states[s] = true;
 			}
 			const auto root
-			    = lca(separating_sequences, [&states](auto z) -> bool { return states[z]; });
+			    = lca(separating_sequences, [&states](state z) -> bool { return states[z]; });
 
 			vector<word> stack_of_words;
 			const function<void(splitting_tree const &)> recursor = [&](splitting_tree const & n) {

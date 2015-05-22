@@ -82,7 +82,7 @@ template <typename T> struct trie {
 /// \returns an array of words (without the prefixes)
 template <typename T> std::vector<std::vector<T>> flatten(trie<T> const & t) {
 	std::vector<std::vector<T>> ret;
-	t.for_each([&ret](auto && w) { ret.push_back(w); });
+	t.for_each([&ret](std::vector<T> const & w) { ret.push_back(w); });
 	return ret;
 }
 
@@ -90,7 +90,7 @@ template <typename T> std::vector<std::vector<T>> flatten(trie<T> const & t) {
 template <typename T> std::pair<size_t, size_t> total_size(trie<T> const & t) {
 	size_t count = 0;
 	size_t total_count = 0;
-	t.for_each([&count, &total_count](auto && w) {
+	t.for_each([&count, &total_count](std::vector<T> const &  w) {
 		++count;
 		total_count += w.size();
 	});

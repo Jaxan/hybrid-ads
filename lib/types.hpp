@@ -3,6 +3,10 @@
 #include <stddef.h> // for size_t
 #include <vector>
 
+#ifndef __APPLE__
+using uint16_t = __int16;
+#endif
+
 // We use size_ts for fast indexing. Note that there is little type safety here
 using state = uint16_t;
 using input = uint16_t;
