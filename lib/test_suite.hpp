@@ -17,7 +17,7 @@ void test(mealy const & specification, transfer_sequences const & prefixes,
           separating_family const & separating_family, size_t k_max, writer const & output);
 
 /// \brief Performs random non-exhaustive tests for more states (harmonized, e.g. HSI / DS)
-[[noreturn]] void randomized_test(mealy const & specification, transfer_sequences const & prefixes,
+void randomized_test(mealy const & specification, transfer_sequences const & prefixes,
                                   separating_family const & separating_family, size_t min_k,
                                   size_t rnd_length, writer const & output);
 
