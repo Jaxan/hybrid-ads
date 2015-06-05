@@ -39,7 +39,7 @@ adaptive_distinguishing_sequence create_adaptive_distinguishing_sequence(const r
 
 		if(oboom.children.empty()) continue;
 
-		node.word = oboom.separator;
+		node.w = oboom.separator;
 		for(auto && c : oboom.children){
 			adaptive_distinguishing_sequence new_c(0, node.depth + 1);
 

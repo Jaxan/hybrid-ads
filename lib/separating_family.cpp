@@ -79,7 +79,7 @@ separating_family create_separating_family(const adaptive_distinguishing_sequenc
 		}
 
 		// add some work
-		for (auto && i : node.word) uio.push_back(i);        // extend the word
+		for (auto && i : node.w) uio.push_back(i);        // extend the word
 		for (auto && c : node.children) work.push({uio, c}); // and visit the children with word
 	}
 

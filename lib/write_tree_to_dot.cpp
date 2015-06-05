@@ -46,8 +46,8 @@ void write_adaptive_distinguishing_sequence_to_dot(const adaptive_distinguishing
 	const auto symbols = create_reverse_map(t.input_indices);
 	size_t overflows = 0;
 	write_tree_to_dot(root, [&symbols, &overflows](const adaptive_distinguishing_sequence & node, ostream & out) {
-		if (!node.word.empty()) {
-			print_vec(out, node.word, " ", [&symbols](input x){ return "I" + symbols[x]; });
+		if (!node.w.empty()) {
+			print_vec(out, node.w, " ", [&symbols](input x){ return "I" + symbols[x]; });
 		} else {
 			vector<state> I(node.CI.size());
 			transform(begin(node.CI), end(node.CI), begin(I), [](pair<state, state> p){ return p.second; });

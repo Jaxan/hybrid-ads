@@ -18,7 +18,7 @@ struct adaptive_distinguishing_sequence {
 	// current, initial
 	std::vector<std::pair<state, state>> CI;
 	std::vector<adaptive_distinguishing_sequence> children;
-	word word;
+	word w;
 	size_t depth;
 };
 
