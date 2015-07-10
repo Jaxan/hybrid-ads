@@ -66,7 +66,7 @@ mealy read_mealy_from_txt(const std::string & filename) {
 mealy read_mealy_from_dot(std::istream & in, translation & t){
 	mealy m;
 
-	std::map<std::string, state> state_indices;
+	std::unordered_map<std::string, state> state_indices;
 	state max_state = 0;
 
 	string line;
@@ -142,7 +142,7 @@ std::pair<mealy, translation> read_mealy_from_dot(const string & filename){
 
 
 template <typename T>
-std::vector<std::string> create_reverse_map_impl(std::map<std::string, T> const & indices) {
+std::vector<std::string> create_reverse_map_impl(std::unordered_map<std::string, T> const & indices) {
 	std::vector<std::string> ret(indices.size());
 	for (auto && p : indices) {
 		ret[p.second] = p.first;
@@ -150,7 +150,7 @@ std::vector<std::string> create_reverse_map_impl(std::map<std::string, T> const 
 	return ret;
 }
 
-std::vector<string> create_reverse_map(const std::map<string, input> & indices) {
+std::vector<string> create_reverse_map(const std::unordered_map<string, input> & indices) {
 	return create_reverse_map_impl(indices);
 }
 

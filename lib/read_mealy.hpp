@@ -3,7 +3,8 @@
 #include "types.hpp"
 
 #include <iosfwd>
-#include <map>
+#include <string>
+#include <unordered_map>
 #include <utility>
 
 struct mealy;
@@ -27,16 +28,16 @@ std::pair<mealy, translation> read_mealy_from_dot(std::string const & filename);
 
 /// \brief For non-integral formats we use a translation to integers
 struct translation {
-	std::map<std::string, input> input_indices;
+	std::unordered_map<std::string, input> input_indices;
 	input max_input = 0;
 
-	std::map<std::string, output> output_indices;
+	std::unordered_map<std::string, output> output_indices;
 	output max_output = 0;
 };
 
 /// \brief inverts the input_indices and output_indices maps
-std::vector<std::string> create_reverse_map(std::map<std::string, input> const & indices);
-std::vector<std::string> create_reverse_map(std::map<std::string, output> const & indices);
+std::vector<std::string> create_reverse_map(std::unordered_map<std::string, input> const & indices);
+std::vector<std::string> create_reverse_map(std::unordered_map<std::string, output> const & indices);
 
 /// \brief defines trivial translation (the string represent integers directly)
 translation create_translation_for_mealy(mealy const & m);
