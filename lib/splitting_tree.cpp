@@ -15,14 +15,6 @@ splitting_tree::splitting_tree(size_t N, size_t d) : states(N), depth(d) {
 	iota(begin(states), end(states), 0);
 }
 
-splitting_tree & lca_impl2(splitting_tree & node) {
-	if (node.mark > 1) return node;
-	for (auto && c : node.children) {
-		if (c.mark > 0) return lca_impl2(c);
-	}
-	return node; // this is a leaf
-}
-
 result create_splitting_tree(const mealy & g, options opt) {
 	const auto N = g.graph_size;
 	const auto P = g.input_size;

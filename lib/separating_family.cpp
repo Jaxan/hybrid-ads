@@ -42,29 +42,18 @@ separating_family create_separating_family(const adaptive_distinguishing_sequenc
 				const auto s = p.second;
 				states[s] = true;
 			}
-			const auto root
-			    = lca(separating_sequences, [&states](state z) -> bool { return states[z]; });
+			const auto roots
+			    = multi_lca(separating_sequences, [&states](state z) -> bool { return states[z]; });
 
-			vector<word> stack_of_words;
-			const function<void(splitting_tree const &)> recursor = [&](splitting_tree const & n) {
-				if (n.children.empty()) {
-					for (state s : n.states) {
-						if (states[s]) {
-							for (auto const & w : stack_of_words) {
-								suffixes[s].insert(w);
-							}
-						}
+			// NOTE: this is slightly less efficient than doing the same thing inline in lca(...)
+			// but I was to lazy to write a dfs again
+			for (const splitting_tree & n : roots) {
+				for (state s : n.states) {
+					if (states[s]) {
+						suffixes[s].insert(n.separator);
 					}
-				} else {
-					if (n.mark > 1) stack_of_words.push_back(n.separator);
-					for (auto const & c : n.children) {
-						recursor(c);
-					}
-					if (n.mark > 1) stack_of_words.pop_back();
 				}
-			};
-
-			recursor(root);
+			}
 
 			// Finalize the suffixes
 			for (auto && p : node.CI) {

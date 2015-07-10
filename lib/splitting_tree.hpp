@@ -12,36 +12,66 @@ struct splitting_tree {
 	std::vector<splitting_tree> children;
 	word separator;
 	size_t depth = 0;
-	mutable int mark = 0; // used for some algorithms...
 };
 
-template <typename Fun> void lca_impl1(splitting_tree const & node, Fun && f) {
-	node.mark = 0;
-	if (!node.children.empty()) {
-		for (auto && c : node.children) {
-			lca_impl1(c, f);
-			if (c.mark) node.mark++;
+/// \brief the generic lca implementation.
+/// It uses \p store to store the relevant nodes (in some bottom up order), the last store is the
+/// actual lowest common ancestor (but the other might be relevant as well). The function \p f is
+/// the predicate on the states (returns true for the states we want to compute the lca of).
+template <typename Fun, typename Store>
+size_t lca_impl(splitting_tree const & node, Fun && f, Store && store) {
+	static_assert(std::is_same<decltype(f(state(0))), bool>::value, "f should return a bool");
+	if (node.children.empty()) {
+		// if it is a leaf, we search for the states
+		// if it contains a state, return this leaf
+		for (auto s : node.states) {
+			if (f(s)) {
+				store(node);
+				return 1;
+			}
 		}
+		// did not contain the leaf => nullptr
+		return 0;
 	} else {
-		for (auto && s : node.states) {
-			if (f(s)) node.mark++;
+		// otherwise, check our children. If there is a single one giving a node
+		// we return this (it's the lca), if more children return a non-nil
+		// node, then we are the lca
+		size_t count = 0;
+		for (auto & c : node.children) {
+			auto inner_count = lca_impl(c, f, store);
+			if (inner_count > 0) count++;
 		}
-	}
-}
 
-splitting_tree & lca_impl2(splitting_tree & node);
+		if (count >= 2) {
+			store(node);
+		}
+
+		return count;
+	}
+	throw std::logic_error("unreachable code");
+}
 
 /// \brief Find the lowest common ancestor of elements on which \p f returns true.
 template <typename Fun> splitting_tree & lca(splitting_tree & root, Fun && f) {
-	static_assert(std::is_same<decltype(f(0)), bool>::value, "f should return a bool");
-	lca_impl1(root, f);
-	return lca_impl2(root);
+	splitting_tree const * store = nullptr;
+	lca_impl(root, f, [&store](splitting_tree const & node) { store = &node; });
+	return const_cast<splitting_tree &>(*store); // NOTE: this const_cast is safe
 }
 
 template <typename Fun> const splitting_tree & lca(const splitting_tree & root, Fun && f) {
-	static_assert(std::is_same<decltype(f(0)), bool>::value, "f should return a bool");
-	lca_impl1(root, f);
-	return lca_impl2(const_cast<splitting_tree &>(root));
+	splitting_tree const * store = nullptr;
+	lca_impl(root, f, [&store](splitting_tree const & node) { store = &node; });
+	return *store;
+}
+
+/// \brief Find "all" lca's of elements on which \p f returns true.
+/// This can be used to collect all the separating sequences for the subset of states.
+template <typename Fun>
+std::vector<std::reference_wrapper<const splitting_tree>> multi_lca(const splitting_tree & root,
+                                                                    Fun && f) {
+	std::vector<std::reference_wrapper<const splitting_tree>> ret;
+	lca_impl(root, f, [&ret](splitting_tree const & node) { ret.emplace_back(node); });
+	return ret;
 }
 
 
