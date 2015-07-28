@@ -18,8 +18,8 @@ using namespace std;
 using time_logger = silent_timer;
 
 int main(int argc, char *argv[]) try {
-	if(argc != 5) {
-		cerr << "usage: main <filename> <max k> <rnd length> <all|fixed|random>" << endl;
+	if(argc != 5 && argc != 6) {
+		cerr << "usage: main <filename> <max k> <rnd length> <all|fixed|random> [<seed>]" << endl;
 		return 1;
 	}
 	const string filename = argv[1];
@@ -31,6 +31,9 @@ int main(int argc, char *argv[]) try {
 	const string mode = argv[4];
 	const bool streaming = mode == "all" || mode == "fixed";
 	const bool random_part = mode == "all" || mode == "random";
+
+	const bool seed_provided = argc == 6;
+	const uint_fast32_t seed = seed_provided ? stoul(argv[5]) : 0;
 
 	const bool use_distinguishing_sequence = true;
 	const bool randomize_prefixes = true;
@@ -57,10 +60,23 @@ int main(int argc, char *argv[]) try {
 	const auto & machine = reachable_submachine(move(machine_and_translation.first), 0);
 	const auto & translation = machine_and_translation.second;
 
+	// every thread gets its own seed
+	const auto random_seeds = [&] {
+		vector<uint_fast32_t> seeds(4);
+		if (seed_provided) {
+			seed_seq s{seed};
+			s.generate(seeds.begin(), seeds.end());
+		} else {
+			random_device rd;
+			generate(seeds.begin(), seeds.end(), ref(rd));
+		}
+		return seeds;
+	}();
+
 	auto all_pair_separating_sequences = [&]{
 		const auto splitting_tree_hopcroft = [&]{
 			time_logger t("creating hopcroft splitting tree");
-			return create_splitting_tree(machine, randomize_hopcroft ? randomized_hopcroft_style : hopcroft_style);
+			return create_splitting_tree(machine, randomize_hopcroft ? randomized_hopcroft_style : hopcroft_style, random_seeds[0]);
 		}();
 
 		return splitting_tree_hopcroft.root;
@@ -70,7 +86,7 @@ int main(int argc, char *argv[]) try {
 		const auto tree = [&]{
 			time_logger t("Lee & Yannakakis I");
 			if(use_distinguishing_sequence)
-				return create_splitting_tree(machine, randomize_lee_yannakakis ? randomized_lee_yannakakis_style : lee_yannakakis_style);
+				return create_splitting_tree(machine, randomize_lee_yannakakis ? randomized_lee_yannakakis_style : lee_yannakakis_style, random_seeds[1]);
 			else
 				return result(machine.graph_size);
 		}();
@@ -86,7 +102,7 @@ int main(int argc, char *argv[]) try {
 	auto transfer_sequences = [&]{
 		time_logger t("determining transfer sequences");
 		if(randomize_prefixes){
-			return create_randomized_transfer_sequences(machine, 0);
+			return create_randomized_transfer_sequences(machine, 0, random_seeds[2]);
 		} else {
 			return create_transfer_sequences(machine, 0);
 		}
@@ -107,7 +123,7 @@ int main(int argc, char *argv[]) try {
 	if(random_part){
 		time_logger t("outputting all random tests");
 		const auto k_max_ = streaming ? k_max + 1 : 0;
-		randomized_test(machine, transfer_sequences, separating_family, k_max_, rnd_length, default_writer(inputs));
+		randomized_test(machine, transfer_sequences, separating_family, k_max_, rnd_length, default_writer(inputs), random_seeds[3]);
 	}
 
 } catch (exception const & e) {

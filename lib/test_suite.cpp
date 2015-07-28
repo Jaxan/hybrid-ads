@@ -34,11 +34,10 @@ void test(const mealy & specification, const transfer_sequences & prefixes,
 
 void randomized_test(const mealy & specification, const transfer_sequences & prefixes,
                      const separating_family & separating_family, size_t min_k, size_t rnd_length,
-                     const writer & output) {
+                     const writer & output, uint_fast32_t random_seed) {
 	clog << "*** K >= " << min_k << endl;
 
-	std::random_device rd;
-	std::mt19937 generator(rd());
+	std::mt19937 generator(random_seed);
 
 	// https://en.wikipedia.org/wiki/Geometric_distribution we have the random variable Y here
 	uniform_int_distribution<> unfair_coin(0, rnd_length);

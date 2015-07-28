@@ -38,9 +38,8 @@ transfer_sequences create_transfer_sequences(const mealy& machine, state s){
 	return words;
 }
 
-transfer_sequences create_randomized_transfer_sequences(const mealy & machine, state s){
-	random_device rd;
-	mt19937 generator(rd());
+transfer_sequences create_randomized_transfer_sequences(const mealy & machine, state s, uint_fast32_t random_seed){
+	mt19937 generator(random_seed);
 
 	vector<bool> visited(machine.graph_size, false);
 	vector<word> words(machine.graph_size);

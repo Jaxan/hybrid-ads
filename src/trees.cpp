@@ -3,8 +3,9 @@
 #include <splitting_tree.hpp>
 #include <write_tree_to_dot.hpp>
 
-#include <string>
 #include <iostream>
+#include <random>
+#include <string>
 
 using namespace std;
 
@@ -20,7 +21,9 @@ int main(int argc, char * argv[]) {
 	const auto & translation = machine_and_translation.second;
 
 	const auto options = randomized ? randomized_lee_yannakakis_style : lee_yannakakis_style;
-	const auto tree = create_splitting_tree(machine, options);
+
+	random_device rd;
+	const auto tree = create_splitting_tree(machine, options, rd());
 	const auto sequence = create_adaptive_distinguishing_sequence(tree);
 
 	write_splitting_tree_to_dot(tree.root, filename + ".tree");

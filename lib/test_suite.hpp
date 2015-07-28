@@ -19,7 +19,7 @@ void test(mealy const & specification, transfer_sequences const & prefixes,
 /// \brief Performs random non-exhaustive tests for more states (harmonized, e.g. HSI / DS)
 void randomized_test(mealy const & specification, transfer_sequences const & prefixes,
                                   separating_family const & separating_family, size_t min_k,
-                                  size_t rnd_length, writer const & output);
+                                  size_t rnd_length, writer const & output, uint_fast32_t random_seed);
 
 /// \brief returns a writer which simply writes everything to cout (via inputs)
 writer default_writer(const std::vector<std::string> & inputs);

@@ -111,4 +111,4 @@ struct result {
 
 /// \brief Creates a splitting tree by partition refinement.
 /// \returns a splitting tree and other calculated structures.
-result create_splitting_tree(mealy const & m, options opt);
+result create_splitting_tree(mealy const & m, options opt, uint_fast32_t random_seed);

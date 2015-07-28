@@ -6,8 +6,9 @@
 #include <trie.hpp>
 
 #include <future>
-#include <string>
 #include <iostream>
+#include <random>
+#include <string>
 
 using namespace std;
 
@@ -23,14 +24,16 @@ static Method parse_method(string const & s) {
 }
 
 int main(int argc, char * argv[]) {
-	if (argc != 4) {
-		cerr << "usage: methods <file> <mode> <k_max>\n";
+	if (argc != 4 && argc != 5) {
+		cerr << "usage: methods <file> <mode> <k_max> [<seed>]\n";
 		return 1;
 	}
 
 	const string filename = argv[1];
 	const Method method = parse_method(argv[2]);
 	const size_t k_max = std::stoul(argv[3]);
+	const bool seed_provided = argc == 5;
+	const uint_fast32_t seed = seed_provided ? stoul(argv[5]) : 0;
 
 	const auto machine = [&] {
 		if (filename.find(".txt") != string::npos) {
@@ -43,21 +46,33 @@ int main(int argc, char * argv[]) {
 		return read_mealy_from_dot(filename).first;
 	}();
 
+	const auto random_seeds = [&] {
+		vector<uint_fast32_t> seeds(3);
+		if (seed_provided) {
+			seed_seq s{seed};
+			s.generate(seeds.begin(), seeds.end());
+		} else {
+			random_device rd;
+			generate(seeds.begin(), seeds.end(), ref(rd));
+		}
+		return seeds;
+	}();
+
 	auto sequence_fut = async([&] {
 		if (method == hsi_method) {
 			return create_adaptive_distinguishing_sequence(result(machine.graph_size));
 		}
-		const auto tree = create_splitting_tree(machine, randomized_lee_yannakakis_style);
+		const auto tree = create_splitting_tree(machine, randomized_lee_yannakakis_style, random_seeds[0]);
 		return create_adaptive_distinguishing_sequence(tree);
 	});
 
 	auto pairs_fut = async([&] {
-		const auto tree = create_splitting_tree(machine, randomized_min_hopcroft_style);
+		const auto tree = create_splitting_tree(machine, randomized_min_hopcroft_style, random_seeds[1]);
 		return tree.root;
 	});
 
 	auto prefixes_fut = async([&] {
-		return create_transfer_sequences(machine, 0);
+		return create_randomized_transfer_sequences(machine, 0, random_seeds[2]);
 	});
 
 	auto middles_fut = async([&] {

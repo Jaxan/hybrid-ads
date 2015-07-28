@@ -15,7 +15,7 @@ splitting_tree::splitting_tree(size_t N, size_t d) : states(N), depth(d) {
 	iota(begin(states), end(states), 0);
 }
 
-result create_splitting_tree(const mealy & g, options opt) {
+result create_splitting_tree(const mealy & g, options opt, uint_fast32_t random_seed) {
 	const auto N = g.graph_size;
 	const auto P = g.input_size;
 	const auto Q = g.output_size;
@@ -34,8 +34,7 @@ result create_splitting_tree(const mealy & g, options opt) {
 	// List of inputs, will be shuffled in case of randomizations
 	vector<input> all_inputs(P);
 	iota(begin(all_inputs), end(all_inputs), 0);
-	random_device rd;
-	mt19937 generator(rd());
+	mt19937 generator(random_seed);
 
 	size_t current_order = 0;
 	bool split_in_current_order = false;
