@@ -2,11 +2,26 @@
 #include <reachability.hpp>
 #include <splitting_tree.hpp>
 
+#include <docopt.h>
+
 #include <iostream>
 #include <random>
 #include <fstream>
 
 using namespace std;
+
+static const char USAGE[] =
+    R"(Random Mealy machine generator
+
+    Usage:
+      generator random [-mc] <states> <inputs> <outputs> <machines> [<seed>]
+
+    Options:
+      -h, --help       Show this screen
+      --version        Show version
+      -m, --minimal    Only generate minimal machines
+      -c, --connected  Only generate reachable machines
+)";
 
 static size_t number_of_leaves(splitting_tree const & root) {
 	if (root.children.empty()) return 1;
@@ -37,7 +52,8 @@ static mealy generate_random_machine(size_t N, size_t P, size_t Q, mt19937 & gen
 }
 
 static void print_machine(mealy const & m, size_t count) {
-	ofstream file("machine_" + to_string(m.graph_size) + "_" + to_string(m.input_size) + "_" + to_string(m.output_size) + "_" + to_string(count) + ".txt");
+	ofstream file("machine_" + to_string(m.graph_size) + "_" + to_string(m.input_size) + "_"
+	              + to_string(m.output_size) + "_" + to_string(count) + ".txt");
 	for (state s = 0; s < m.graph_size; ++s) {
 		for (input i = 0; i < m.input_size; ++i) {
 			auto e = m.graph[s][i];
@@ -47,44 +63,39 @@ static void print_machine(mealy const & m, size_t count) {
 }
 
 int main(int argc, char * argv[]) {
-	if (argc != 5 && argc != 6) {
-		cerr << "usage: generator <N> <P> <Q> <number of machines> [<seed>]" << endl;
-		return 1;
+	const auto args = docopt::docopt(USAGE, {argv + 1, argv + argc}, true, __DATE__ __TIME__);
+	for (auto const & arg : args) {
+		std::cout << arg.first << arg.second << std::endl;
 	}
 
-	const auto N = stoul(argv[1]);
-	const auto P = stoul(argv[2]);
-	const auto Q = stoul(argv[3]);
-	const auto number_of_machines = stoul(argv[4]);
-
 	auto gen = [&] {
-		if (argc == 6) {
-			auto seed = stoul(argv[5]);
+		if (args.at("<seed>")) {
+			auto seed = args.at("<seed>").asLong();
 			return mt19937(seed);
 		}
 		random_device rd;
 		return mt19937(rd());
 	}();
 
-	size_t count = 0;
-	size_t connected = 0;
-	size_t minimal = 0;
+	size_t number_of_machines = args.at("<machines>").asLong();
+	size_t constructed = 0;
 
-	while (true) {
-		auto const m = generate_random_machine(N, P, Q, gen);
-		auto const m2 = reachable_submachine(m, 0);
-		auto const tree = create_splitting_tree(m2, min_hopcroft_style, 0).root;
+	while (constructed < number_of_machines) {
+		auto const m
+		    = generate_random_machine(args.at("<states>").asLong(), args.at("<inputs>").asLong(),
+		                              args.at("<outputs>").asLong(), gen);
 
-		count++;
-		if (m.graph_size == m2.graph_size) connected++;
-		if (number_of_leaves(tree) == m.graph_size) minimal++;
-
-		if (number_of_leaves(tree) == m.graph_size) {
-			print_machine(m2, minimal);
+		if (args.at("--connected").asBool()) {
+			auto const m2 = reachable_submachine(m, 0);
+			if (m2.graph_size != m.graph_size) continue;
 		}
 
-		if (minimal >= number_of_machines) break;
-	}
+		if (args.at("--minimal").asBool()) {
+			auto const tree = create_splitting_tree(m, min_hopcroft_style, 0).root;
+			if (number_of_leaves(tree) != m.graph_size) continue;
+		}
 
-	clog << minimal << " / " << connected << " / " << count << endl;
+		constructed++;
+		print_machine(m, constructed);
+	}
 }

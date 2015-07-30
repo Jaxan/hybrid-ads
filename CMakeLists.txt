@@ -5,9 +5,10 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 
 find_package(Boost REQUIRED COMPONENTS iostreams program_options filesystem system serialization)
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
-set(libs ${libs} ${Boost_LIBRARIES})
+include_directories(SYSTEM "${PROJECT_SOURCE_DIR}/contrib/docopt.cpp")
+set(libs ${libs} ${Boost_LIBRARIES} docopt_s)
 
-# add_subdirectory("contrib")
+add_subdirectory("contrib/docopt.cpp")
 add_subdirectory("lib")
 add_subdirectory("src")
 
