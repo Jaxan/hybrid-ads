@@ -33,7 +33,7 @@ int main(int argc, char * argv[]) {
 	const Method method = parse_method(argv[2]);
 	const size_t k_max = std::stoul(argv[3]);
 	const bool seed_provided = argc == 5;
-	const uint_fast32_t seed = seed_provided ? stoul(argv[5]) : 0;
+	const uint_fast32_t seed = seed_provided ? stoul(argv[4]) : 0;
 
 	const auto machine = [&] {
 		if (filename.find(".txt") != string::npos) {
@@ -85,18 +85,18 @@ int main(int argc, char * argv[]) {
 		return all_sequences;
 	});
 
-	clog << "getting sequence and pairs" << endl;
+	// clog << "getting sequence and pairs" << endl;
 	auto suffixes_fut = async([&] {
 		return create_separating_family(sequence_fut.get(), pairs_fut.get());
 	});
 
-	clog << "getting prefixes, middles and suffixes" << endl;
+	// clog << "getting prefixes, middles and suffixes" << endl;
 	const auto prefixes = prefixes_fut.get();
 	const auto middles = middles_fut.get();
 	const auto suffixes = suffixes_fut.get();
 	trie<input> test_suite;
 
-	clog << "start testing" << endl;
+	// clog << "start testing" << endl;
 	const state start = 0;
 	const word empty = {};
 	for (auto && p : prefixes) {
@@ -114,5 +114,5 @@ int main(int argc, char * argv[]) {
 	}
 
 	const auto p = total_size(test_suite);
-	cout << p.first << '\t' << p.second << endl;
+	cout << p.first << '\t' << p.second << '\t' << p.first + p.second << endl;
 }
