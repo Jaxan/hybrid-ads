@@ -8,6 +8,7 @@
 #include <test_suite.hpp>
 #include <transfer_sequences.hpp>
 
+#include <algorithm>
 #include <future>
 #include <iomanip>
 #include <numeric>
