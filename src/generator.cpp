@@ -3,6 +3,7 @@
 #include <splitting_tree.hpp>
 
 #include <docopt.h>
+#include <boost/lexical_cast.hpp>
 
 #include <iostream>
 #include <random>
@@ -14,15 +15,18 @@ static const char USAGE[] =
 R"(Random Mealy machine generator
 
     Usage:
-      generator random [-mc] <states> <inputs> <outputs> <machines> [<seed>]
+      generator random [options] <states> <inputs> <outputs> <machines> [<seed>]
       generator hopcroft a <states>
       generator hopcroft b <states>
 
     Options:
-      -h, --help       Show this screen
-      --version        Show version
-      -m, --minimal    Only generate minimal machines
-      -c, --connected  Only generate reachable machines
+      -h, --help                    Show this screen
+      --version                     Show version
+      -m, --minimal                 Only generate minimal machines
+      -c, --connected               Only generate reachable machines
+      --output-cluster <factor>     How clustered should the outputs be
+      --state-cluster <factor>      And what about states
+      --single-output-boost <fctr>  Boost for a single output (e.g. quiescence)
 )";
 
 static size_t number_of_leaves(splitting_tree const & root) {
@@ -32,7 +36,13 @@ static size_t number_of_leaves(splitting_tree const & root) {
 	                  [](auto const & l, auto const & r) { return l + number_of_leaves(r); });
 }
 
-static mealy generate_random_machine(size_t N, size_t P, size_t Q, mt19937 & gen) {
+struct random_options {
+	double output_spread = 0;
+	double state_spread = 0;
+	double single_output_boost = 1;
+};
+
+static mealy generate_random_machine(size_t N, size_t P, size_t Q, random_options opts, mt19937 & gen) {
 	mealy m;
 
 	m.graph_size = N;
@@ -41,12 +51,32 @@ static mealy generate_random_machine(size_t N, size_t P, size_t Q, mt19937 & gen
 
 	m.graph.assign(m.graph_size, vector<mealy::edge>(m.input_size));
 
-	uniform_int_distribution<output> o_dist(0, m.output_size - 1);
-	uniform_int_distribution<state> s_dist(0, m.graph_size - 1);
+	auto o_dist = [&] {
+		const auto factor = opts.output_spread;
+		vector<double> probs(m.output_size);
+		for (output o = 0; o < m.output_size; ++o)
+			probs[o] = exp(factor * o / double(m.output_size - 1));
+		probs[0] *= opts.single_output_boost;
+		discrete_distribution<output> dist(probs.begin(), probs.end());
+		return dist;
+	}();
+
+	auto s_dist = [&] {
+		const auto factor = opts.state_spread;
+		vector<double> probs(m.graph_size);
+		for (output o = 0; o < m.graph_size; ++o)
+			probs[o] = exp(factor * o / double(m.graph_size - 1));
+		discrete_distribution<state> dist(probs.begin(), probs.end());
+		return dist;
+	}();
+
+	vector<state> states(m.graph_size);
+	iota(states.begin(), states.end(), 0);
 
 	for (state s = 0; s < m.graph_size; ++s) {
+		shuffle(states.begin(), states.end(), gen);
 		for (input i = 0; i < m.input_size; ++i) {
-			m.graph[s][i] = {s_dist(gen), o_dist(gen)};
+			m.graph[s][i] = {states[s_dist(gen)], o_dist(gen)};
 		}
 	}
 
@@ -68,6 +98,14 @@ int main(int argc, char * argv[]) {
 	const auto args = docopt::docopt(USAGE, {argv + 1, argv + argc}, true, __DATE__ __TIME__);
 
 	if (args.at("random").asBool()) {
+		random_options opts;
+		if (args.at("--output-cluster"))
+			opts.output_spread = -boost::lexical_cast<double>(args.at("--output-cluster").asString());
+		if (args.at("--state-cluster"))
+			opts.state_spread = -boost::lexical_cast<double>(args.at("--state-cluster").asString());
+		if (args.at("--single-output-boost"))
+			opts.single_output_boost = boost::lexical_cast<double>(args.at("--single-output-boost").asString());
+
 		auto gen = [&] {
 			if (args.at("<seed>")) {
 				auto seed = args.at("<seed>").asLong();
@@ -83,7 +121,7 @@ int main(int argc, char * argv[]) {
 		while (constructed < number_of_machines) {
 			auto const m = generate_random_machine(args.at("<states>").asLong(),
 			                                       args.at("<inputs>").asLong(),
-			                                       args.at("<outputs>").asLong(), gen);
+			                                       args.at("<outputs>").asLong(), opts, gen);
 
 			if (args.at("--connected").asBool()) {
 				auto const m2 = reachable_submachine(m, 0);
