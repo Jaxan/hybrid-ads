@@ -8,6 +8,8 @@
 #include <test_suite.hpp>
 #include <transfer_sequences.hpp>
 
+#include <docopt.h>
+
 #include <algorithm>
 #include <future>
 #include <iomanip>
@@ -16,27 +18,46 @@
 
 using namespace std;
 
+static const char USAGE[] =
+R"(Generate a test suite
+
+    Usage:
+      main [options] <filename> (all|fixed|random) <max k> <rnd length>
+
+    Options:
+      -h, --help       Show this screen
+      --version        Show version
+      --seed <seed>    32 bits seeds for deterministic execution
+      --no-ds          Only use the classical algorithm (hsi)
+      --random-ds      Choose randomly between the ds method or hsi method
+      --no-suffix      Dont calculate anything smart, just do the random stuff
+)";
+
 using time_logger = silent_timer;
 
 int main(int argc, char *argv[]) try {
-	if(argc != 5 && argc != 6) {
-		cerr << "usage: main <filename> <max k> <rnd length> <all|fixed|random> [<seed>]" << endl;
-		return 1;
-	}
-	const string filename = argv[1];
-	const bool use_stdio = filename == "--";
+	const auto args = docopt::docopt(USAGE, {argv + 1, argv + argc}, true, "5 aug 11:00");
 
-	const auto k_max = stoul(argv[2]);
-	const auto rnd_length = stoul(argv[3]);
+	const string filename = args.at("<filename>").asString();
+	const bool use_stdio = filename == "=";
 
-	const string mode = argv[4];
-	const bool streaming = mode == "all" || mode == "fixed";
-	const bool random_part = mode == "all" || mode == "random";
+	const auto k_max = args.at("<max k>").asLong();
+	const auto rnd_length = args.at("<rnd length>").asLong();
 
-	const bool seed_provided = argc == 6;
-	const uint_fast32_t seed = seed_provided ? stoul(argv[5]) : 0;
+	const bool streaming = args.at("all").asBool() || args.at("fixed").asBool();
+	const bool random_part = args.at("all").asBool() || args.at("random").asBool();
+	const bool no_suffix = args.at("--no-suffix").asBool();
 
-	const bool use_distinguishing_sequence = true;
+	const bool seed_provided = bool(args.at("--seed"));
+	const uint_fast32_t seed = seed_provided ? args.at("--seed").asLong() : 0;
+
+	const bool use_distinguishing_sequence = [&]{
+		if(args.at("--random-ds").asBool()) {
+			random_device rd;
+			return rd() - rd.min() < (rd.max() - rd.min()) / 2;
+		}
+		return !args.at("--no-ds").asBool();
+	}();
 	const bool randomize_prefixes = true;
 	const bool randomize_hopcroft = true;
 	const bool randomize_lee_yannakakis = true;
@@ -75,6 +96,8 @@ int main(int argc, char *argv[]) try {
 	}();
 
 	auto all_pair_separating_sequences = [&]{
+		if(no_suffix) return splitting_tree(0, 0);
+
 		const auto splitting_tree_hopcroft = [&]{
 			time_logger t("creating hopcroft splitting tree");
 			return create_splitting_tree(machine, randomize_hopcroft ? randomized_hopcroft_style : hopcroft_style, random_seeds[0]);
@@ -84,6 +107,8 @@ int main(int argc, char *argv[]) try {
 	}();
 
 	auto sequence = [&]{
+		if(no_suffix) return adaptive_distinguishing_sequence(0, 0);
+
 		const auto tree = [&]{
 			time_logger t("Lee & Yannakakis I");
 			if(use_distinguishing_sequence)
@@ -112,6 +137,12 @@ int main(int argc, char *argv[]) try {
 	auto inputs = create_reverse_map(translation.input_indices);
 
 	const auto separating_family = [&]{
+		if(no_suffix) {
+			separating_set s{{word{}}};
+			vector<separating_set> suffixes(machine.graph_size, s);
+			return suffixes;
+		}
+
 		time_logger t("making seperating family");
 		return create_separating_family(sequence, all_pair_separating_sequences);
 	}();

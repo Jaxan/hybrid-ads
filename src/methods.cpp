@@ -5,6 +5,8 @@
 #include <transfer_sequences.hpp>
 #include <trie.hpp>
 
+#include <docopt.h>
+
 #include <future>
 #include <iostream>
 #include <random>
@@ -12,28 +14,25 @@
 
 using namespace std;
 
-enum Method {
-	hsi_method,
-	ds_plus_method,
-};
+static const char USAGE[] =
+R"(FSM-based test methods
 
-static Method parse_method(string const & s) {
-	if (s == "--W-method") return hsi_method;
-	if (s == "--DS-method") return ds_plus_method;
-	throw runtime_error("No valid method specified");
-}
+    Usage:
+      methods (hsi|ads) [options] <file>
+
+    Options:
+      -h, --help               Show current help
+      --version                Show version
+      -s <seed>, --seed <seed> Specify a seed
+      --non-random             Iterate inputs in specified order (as occurring in input file)
+      -k <states>              Testing extra states [default: 0]
+)";
 
 int main(int argc, char * argv[]) {
-	if (argc != 4 && argc != 5) {
-		cerr << "usage: methods <file> <mode> <k_max> [<seed>]\n";
-		return 1;
-	}
+	const auto args = docopt::docopt(USAGE, {argv + 1, argv + argc}, true, __DATE__ __TIME__);
 
-	const string filename = argv[1];
-	const Method method = parse_method(argv[2]);
-	const size_t k_max = std::stoul(argv[3]);
-	const bool seed_provided = argc == 5;
-	const uint_fast32_t seed = seed_provided ? stoul(argv[4]) : 0;
+	const string filename = args.at("<file>").asString();
+	const size_t k_max = args.at("-k").asLong() + 1;
 
 	const auto machine = [&] {
 		if (filename.find(".txt") != string::npos) {
@@ -48,8 +47,8 @@ int main(int argc, char * argv[]) {
 
 	const auto random_seeds = [&] {
 		vector<uint_fast32_t> seeds(3);
-		if (seed_provided) {
-			seed_seq s{seed};
+		if (args.at("--seed")) {
+			seed_seq s{args.at("--seed").asLong()};
 			s.generate(seeds.begin(), seeds.end());
 		} else {
 			random_device rd;
@@ -59,21 +58,22 @@ int main(int argc, char * argv[]) {
 	}();
 
 	auto sequence_fut = async([&] {
-		if (method == hsi_method) {
+		if (args.at("hsi").asBool()) {
 			return create_adaptive_distinguishing_sequence(result(machine.graph_size));
 		}
-		const auto tree = create_splitting_tree(machine, randomized_lee_yannakakis_style, random_seeds[0]);
+		const auto tree
+		    = create_splitting_tree(machine, args.at("--non-random").asBool() ? lee_yannakakis_style : randomized_lee_yannakakis_style, random_seeds[0]);
 		return create_adaptive_distinguishing_sequence(tree);
 	});
 
 	auto pairs_fut = async([&] {
-		const auto tree = create_splitting_tree(machine, randomized_min_hopcroft_style, random_seeds[1]);
+		const auto tree
+		    = create_splitting_tree(machine, args.at("--non-random").asBool() ? min_hopcroft_style : randomized_min_hopcroft_style, random_seeds[1]);
 		return tree.root;
 	});
 
-	auto prefixes_fut = async([&] {
-		return create_randomized_transfer_sequences(machine, 0, random_seeds[2]);
-	});
+	auto prefixes_fut
+	    = async([&] { return create_randomized_transfer_sequences(machine, 0, random_seeds[2]); });
 
 	auto middles_fut = async([&] {
 		vector<word> all_sequences(1);
@@ -85,18 +85,14 @@ int main(int argc, char * argv[]) {
 		return all_sequences;
 	});
 
-	// clog << "getting sequence and pairs" << endl;
-	auto suffixes_fut = async([&] {
-		return create_separating_family(sequence_fut.get(), pairs_fut.get());
-	});
+	auto suffixes_fut
+	    = async([&] { return create_separating_family(sequence_fut.get(), pairs_fut.get()); });
 
-	// clog << "getting prefixes, middles and suffixes" << endl;
 	const auto prefixes = prefixes_fut.get();
 	const auto middles = middles_fut.get();
 	const auto suffixes = suffixes_fut.get();
 	trie<input> test_suite;
 
-	// clog << "start testing" << endl;
 	const state start = 0;
 	const word empty = {};
 	for (auto && p : prefixes) {
