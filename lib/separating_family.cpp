@@ -3,9 +3,6 @@
 #include "splitting_tree.hpp"
 #include "trie.hpp"
 
-#include <boost/range/algorithm.hpp>
-#include <boost/range/algorithm_ext/erase.hpp>
-
 #include <functional>
 #include <stack>
 #include <utility>

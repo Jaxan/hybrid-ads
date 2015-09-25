@@ -20,7 +20,15 @@ the number of states, but could be used for alphabets).
 
 ## Building
 
-The only dependency is boost. In order to build the project, one can use cmake.
+There are two dependencies: docopt.cpp (for handling program options) and boost
+(for an optional type and string manipulations). The first dependency is a git
+submodule and can be obtained with:
+
+```
+git submodule update --init
+```
+
+Assuming boost is installed on your system, we can build the tool with cmake:
 
 ```
 mkdir build
@@ -29,8 +37,7 @@ cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
 make
 ```
 
-Then every .cpp file in the src directory will be built and generate an
-executable in the build directory. Note that you'll need c++14, but clang in Mac
+Note that you'll need c++14, but clang in Mac
 OSX will understand that (and if not, you'll have to update Xcode). The main
 sourcefile (`src/main.cpp`) can also be built with c++11 (this is tested on some
 commits on both Windows and linux).
