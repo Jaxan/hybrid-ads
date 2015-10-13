@@ -31,6 +31,7 @@ R"(Generate a test suite
       --no-ds          Only use the classical algorithm (hsi)
       --random-ds      Choose randomly between the ds method or hsi method
       --no-suffix      Dont calculate anything smart, just do the random stuff
+      --suffix-based   Only applies in random mode. Chooses suffix first, and not prefix first
 )";
 
 using time_logger = silent_timer;
@@ -47,6 +48,7 @@ int main(int argc, char *argv[]) try {
 	const bool streaming = args.at("all").asBool() || args.at("fixed").asBool();
 	const bool random_part = args.at("all").asBool() || args.at("random").asBool();
 	const bool no_suffix = args.at("--no-suffix").asBool();
+	const bool suffix_based = args.at("--suffix-based").asBool();
 
 	const bool seed_provided = bool(args.at("--seed"));
 	const uint_fast32_t seed = seed_provided ? args.at("--seed").asLong() : 0;
@@ -153,7 +155,14 @@ int main(int argc, char *argv[]) try {
 	if(random_part){
 		time_logger t("outputting all random tests");
 		const auto k_max_ = streaming ? k_max + 1 : 0;
-		randomized_test(machine, transfer_sequences, separating_family, k_max_, rnd_length, default_writer(inputs), random_seeds[3]);
+
+		if (suffix_based) {
+			randomized_test_suffix(machine, transfer_sequences, separating_family, k_max_,
+			                       rnd_length, default_writer(inputs), random_seeds[3]);
+		} else {
+			randomized_test(machine, transfer_sequences, separating_family, k_max_, rnd_length,
+			                default_writer(inputs), random_seeds[3]);
+		}
 	}
 
 } catch (exception const & e) {
