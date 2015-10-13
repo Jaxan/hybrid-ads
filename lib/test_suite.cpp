@@ -41,7 +41,7 @@ void randomized_test(const mealy & specification, const transfer_sequences & pre
 
 	// https://en.wikipedia.org/wiki/Geometric_distribution we have the random variable Y here
 	uniform_int_distribution<> unfair_coin(0, rnd_length);
-	uniform_int_distribution<size_t> prefix_selection(0, prefixes.size() - 1);
+	uniform_int_distribution<state> prefix_selection(0, prefixes.size() - 1);
 	uniform_int_distribution<size_t> suffix_selection;
 	uniform_int_distribution<input> input_selection(0, specification.input_size - 1);
 

@@ -125,13 +125,11 @@ int main(int argc, char *argv[]) try {
 		return sequence_;
 	}();
 
-	auto transfer_sequences = [&]{
+	auto transfer_sequences = [&] {
 		time_logger t("determining transfer sequences");
-		if(randomize_prefixes){
-			return create_randomized_transfer_sequences(machine, 0, random_seeds[2]);
-		} else {
-			return create_transfer_sequences(machine, 0);
-		}
+		return create_transfer_sequences(randomize_prefixes ? randomized_transfer_sequences
+		                                                    : canonical_transfer_sequences,
+		                                 machine, 0, random_seeds[2]);
 	}();
 
 	auto inputs = create_reverse_map(translation.input_indices);

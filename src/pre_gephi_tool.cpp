@@ -47,7 +47,7 @@ int main(int argc, char *argv[]){
 	vector<optional<size_t>> visited(machine.graph_size);
 	for(size_t i = 0; i <= maximal_hypothesis; ++i){
 		clog << "Visiting hypo " << i << endl;
-		const auto state_cover = create_transfer_sequences(hypotheses[i], 0);
+		const auto state_cover = create_transfer_sequences(canonical_transfer_sequences, hypotheses[i], 0, 0);
 		for(auto && p : state_cover){
 			state s = 0;
 			for(auto && inp : p){

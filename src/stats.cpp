@@ -74,7 +74,7 @@ static void print_stats_for_machine(string filename) {
 	const auto reachable_machine = reachable_submachine(machine, 0);
 	cout << '\t' << reachable_machine.graph_size << " reachable states" << endl;
 
-	const auto prefixes = create_transfer_sequences(reachable_machine, 0);
+	const auto prefixes = create_transfer_sequences(canonical_transfer_sequences, reachable_machine, 0, 0);
 	cout << "prefixes ";
 	print_quantiles(prefixes, [](auto const & l) { return l.size(); }, cout);
 	cout << endl;
