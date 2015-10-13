@@ -44,7 +44,7 @@ mealy read_mealy_from_txt(std::istream & in) {
 		v.resize(max_input);
 		v[i] = mealy::edge(to, o);
 
-		assert(defined(m, to, i));
+		assert(defined(m, from, i));
 	}
 
 	m.graph_size = max_state;
