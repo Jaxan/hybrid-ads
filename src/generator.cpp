@@ -27,6 +27,7 @@ R"(Random Mealy machine generator
       --output-cluster <factor>     How clustered should the outputs be
       --state-cluster <factor>      And what about states
       --single-output-boost <fctr>  Boost for a single output (e.g. quiescence)
+      --permute-alphabets <n>       Makes n copies with permuted input/output
 )";
 
 static size_t number_of_leaves(splitting_tree const & root) {
@@ -41,6 +42,28 @@ struct random_options {
 	double state_spread = 0;
 	double single_output_boost = 1;
 };
+
+static mealy permute_alphabets(mealy const & m){
+	mt19937 gen(random_device{}());
+	const auto create_permutation = [&gen](size_t n){
+		vector<size_t> p(n);
+		iota(p.begin(), p.end(), 0);
+		shuffle(p.begin(), p.end(), gen);
+		return p;
+	};
+
+	const auto ip = create_permutation(m.input_size);
+	const auto op = create_permutation(m.output_size);
+
+	mealy ret = m;
+	for(state s = 0; s < m.graph_size; ++s){
+		for(input i = 0; i < m.input_size; ++i) {
+			ret.graph[s][i] = m.graph[s][ip[i]];
+			ret.graph[s][i].out = op[ret.graph[s][i].out];
+		}
+	}
+	return ret;
+}
 
 static mealy generate_random_machine(size_t N, size_t P, size_t Q, random_options opts, mt19937 & gen) {
 	mealy m;
@@ -133,8 +156,17 @@ int main(int argc, char * argv[]) {
 				if (number_of_leaves(tree) != m.graph_size) continue;
 			}
 
-			constructed++;
-			print_machine("machine", m, constructed);
+			if (args.at("--permute-alphabets")) {
+				auto permuted_copies = args.at("--permute-alphabets").asLong();
+				while (permuted_copies--) {
+					constructed++;
+					auto copy = permute_alphabets(m);
+					print_machine("machine", copy, constructed);
+				}
+			} else {
+				constructed++;
+				print_machine("machine", m, constructed);
+			}
 		}
 	} else if (args.at("hopcroft").asBool() && args.at("a").asBool()) {
 		mealy m;
