@@ -32,6 +32,7 @@ R"(Generate a test suite
       --random-ds      Choose randomly between the ds method or hsi method
       --no-suffix      Dont calculate anything smart, just do the random stuff
       --suffix-based   Only applies in random mode. Chooses suffix first, and not prefix first
+      --prefix <type>  Chooses the kind of prefix: canonical, minimal, buggy, longest
 )";
 
 using time_logger = silent_timer;
@@ -60,7 +61,7 @@ int main(int argc, char *argv[]) try {
 		}
 		return !args.at("--no-ds").asBool();
 	}();
-	const bool randomize_prefixes = true;
+	const string prefix_type = args.at("--prefix") ? args.at("--prefix").asString() : "minimal";
 	const bool randomize_hopcroft = true;
 	const bool randomize_lee_yannakakis = true;
 
@@ -129,9 +130,13 @@ int main(int argc, char *argv[]) try {
 
 	auto transfer_sequences = [&] {
 		time_logger t("determining transfer sequences");
-		return create_transfer_sequences(randomize_prefixes ? randomized_transfer_sequences
-		                                                    : canonical_transfer_sequences,
-		                                 machine, 0, random_seeds[2]);
+		if(prefix_type == "canonical") return create_transfer_sequences(canonical_transfer_sequences, machine, 0, random_seeds[2]);
+		if(prefix_type == "minimal") return create_transfer_sequences(minimal_transfer_sequences, machine, 0, random_seeds[2]);
+		if(prefix_type == "buggy") return create_transfer_sequences(buggy_transfer_sequences, machine, 0, random_seeds[2]);
+		if(prefix_type == "longest") return create_transfer_sequences(longest_transfer_sequences, machine, 0, random_seeds[2]);
+
+		cerr << "Warning: no valid prefix type specified. Assuming minimal.\n";
+		return create_transfer_sequences(minimal_transfer_sequences, machine, 0, random_seeds[2]);
 	}();
 
 	auto inputs = create_reverse_map(translation.input_indices);

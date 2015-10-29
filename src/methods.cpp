@@ -81,7 +81,7 @@ int main(int argc, char * argv[]) {
 	auto prefixes_fut = async([&] {
 		return create_transfer_sequences(args.at("--non-random").asBool()
 		                                     ? canonical_transfer_sequences
-		                                     : randomized_transfer_sequences,
+		                                     : minimal_transfer_sequences,
 		                                 machine, 0, random_seeds[2]);
 	});
 
