@@ -125,7 +125,7 @@ int main(int argc, char * argv[]) {
 	if(args.at("--print-suite").asBool()){
 		test_suite.for_each([](const auto & w){
 			for(const auto & x : w) {
-				cout << x;
+				cout << x << ' ';
 			}
 			cout << endl;
 		});
