@@ -94,8 +94,8 @@ int main(int argc, char * argv[]) {
 	const auto suffixes = suffixes_fut.get();
 	for(state s = 0; s < suffixes.size(); ++s){
 		clog << "suffixes for " << s << endl;
-		for(auto s : suffixes[s].local_suffixes) {
-			for(auto x : s){
+		for(auto s2 : suffixes[s].local_suffixes) {
+			for(auto x : s2){
 				clog << x;
 			}
 			clog << endl;
