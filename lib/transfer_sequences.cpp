@@ -21,7 +21,7 @@ static size_t clamp_to_size_t(double x, size_t min, size_t max) {
 transfer_sequences create_transfer_sequences(transfer_options const & opt, const mealy & machine,
                                              state s, uint_fast32_t random_seed) {
 	mt19937 generator(random_seed);
-	uniform_int_distribution<double> dist(opt.q_min, opt.q_max);
+	uniform_real_distribution<double> dist(opt.q_min, opt.q_max);
 
 	vector<bool> added(machine.graph_size, false);
 	vector<word> words(machine.graph_size);

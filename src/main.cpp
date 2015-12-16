@@ -19,7 +19,7 @@
 using namespace std;
 
 static const char USAGE[] =
-R"(Generate a test suite
+R"(Generate a test suite. Use '=' as filename for stdin.
 
     Usage:
       main [options] <filename> (all|fixed|random) <max k> <rnd length>
@@ -38,7 +38,7 @@ R"(Generate a test suite
 using time_logger = silent_timer;
 
 int main(int argc, char *argv[]) try {
-	const auto args = docopt::docopt(USAGE, {argv + 1, argv + argc}, true, "5 aug 11:00");
+	const auto args = docopt::docopt(USAGE, {argv + 1, argv + argc}, true, "25 Nov 11:50");
 
 	const string filename = args.at("<filename>").asString();
 	const bool use_stdio = filename == "=";

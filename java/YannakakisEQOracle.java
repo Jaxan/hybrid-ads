@@ -23,7 +23,7 @@ import java.util.*;
 public class YannakakisEQOracle<O> implements EquivalenceOracle.MealyEquivalenceOracle<String, O> {
 	private final MembershipOracle<String, Word<O>> sulOracle;
 	private final List<Alphabet<String>> alphabets;
-	private final ProcessBuilder pb = new ProcessBuilder("/Users/joshua/Documents/PhD/Yannakakis/build/main", "--", "0", "3", "random");
+	private final ProcessBuilder pb = new ProcessBuilder("/Users/joshua/Documents/PhD/Yannakakis/build/main", "--prefix", "buggy", "=", "random", "0", "3");
 
 	private int currentAlphabet = 0;
 	private long bound = 100;

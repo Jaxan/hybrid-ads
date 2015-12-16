@@ -43,11 +43,26 @@ sourcefile (`src/main.cpp`) can also be built with c++11 (this is tested on some
 commits on both Windows and linux).
 
 
+### Notes for linux
+
+There seems to be a problem with docopt.cpp with gcc-4.9 as well... (Everything
+compiles, but the program options are not parsed well.) If you want to build
+with `clang` on linux, you should also use `libc++`. Try the following:
+
+```
+sudo apt-get install libc++-dev
+mkdir build
+cd build
+CXX=clang++ CC=clang CXXFLAGS=-stdlib=libc++ LDFLAGS=-pthread cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
+make
+
+```
+
 ## Java
 
-For now the java code, which acts as a bridge between LearnLib and this c++ 
-tool, is included here. But it should earn its own repo at some point. Also, my 
-javanese is a bit rusty...
+For now the java code, which acts as a bridge between LearnLib and this c++
+tool, is included here (can be out-dated). But it should earn its own repo at
+some point. Also, my javanese is a bit rusty...
 
 
 ## License
