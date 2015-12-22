@@ -11,7 +11,7 @@ void test(const mealy & specification, const transfer_sequences & prefixes,
 	vector<word> all_sequences(1);
 
 	for (size_t k = 0; k <= k_max; ++k) {
-		clog << "*** K = " << k << endl;
+		// clog << "*** K = " << k << endl;
 
 		for (state s = 0; s < specification.graph_size; ++s) {
 			const auto prefix = prefixes[s];
@@ -35,7 +35,7 @@ void test(const mealy & specification, const transfer_sequences & prefixes,
 void randomized_test(const mealy & specification, const transfer_sequences & prefixes,
                      const separating_family & separating_family, size_t min_k, size_t rnd_length,
                      const writer & output, uint_fast32_t random_seed) {
-	clog << "*** K >= " << min_k << endl;
+	// clog << "*** K >= " << min_k << endl;
 
 	std::mt19937 generator(random_seed);
 
