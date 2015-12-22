@@ -15,7 +15,7 @@ static string easy_substr(string const & s, size_t begin, size_t end){
 	return s.substr(begin, end - begin);
 }
 
-mealy read_mealy_from_txt(std::istream & in) {
+mealy read_mealy_from_txt(std::istream & in, bool check) {
 	mealy m;
 
 	state max_state = 0;
@@ -54,16 +54,16 @@ mealy read_mealy_from_txt(std::istream & in) {
 	if (m.graph_size == 0) throw runtime_error("Empty state set");
 	if (m.input_size == 0) throw runtime_error("Empty input set");
 	if (m.output_size == 0) throw runtime_error("Empty output set");
-	if (!is_complete(m)) throw runtime_error("Partial machine");
+	if (check && !is_complete(m)) throw runtime_error("Partial machine");
 	return m;
 }
 
-mealy read_mealy_from_txt(const std::string & filename) {
+mealy read_mealy_from_txt(const std::string & filename, bool check) {
 	std::ifstream file(filename);
-	return read_mealy_from_txt(file);
+	return read_mealy_from_txt(file, check);
 }
 
-mealy read_mealy_from_dot(std::istream & in, translation & t){
+mealy read_mealy_from_dot(std::istream & in, translation & t, bool check){
 	mealy m;
 
 	std::unordered_map<std::string, state> state_indices;
@@ -116,27 +116,27 @@ mealy read_mealy_from_dot(std::istream & in, translation & t){
 	if(m.graph_size == 0) throw runtime_error("Empty state set");
 	if(m.input_size == 0) throw runtime_error("Empty input set");
 	if(m.output_size == 0) throw runtime_error("Empty output set");
-	if(!is_complete(m)) throw runtime_error("Partial machine");
+	if(check && !is_complete(m)) throw runtime_error("Partial machine");
 	return m;
 }
 
 
-mealy read_mealy_from_dot(const string & filename, translation & t){
+mealy read_mealy_from_dot(const string & filename, translation & t, bool check){
 	ifstream file(filename);
-	return read_mealy_from_dot(file, t);
+	return read_mealy_from_dot(file, t, check);
 }
 
 
-std::pair<mealy, translation> read_mealy_from_dot(istream & in){
+std::pair<mealy, translation> read_mealy_from_dot(istream & in, bool check){
 	translation t;
-	const auto m = read_mealy_from_dot(in, t);
+	const auto m = read_mealy_from_dot(in, t, check);
 	return {move(m), move(t)};
 }
 
 
-std::pair<mealy, translation> read_mealy_from_dot(const string & filename){
+std::pair<mealy, translation> read_mealy_from_dot(const string & filename, bool check){
 	translation t;
-	const auto m = read_mealy_from_dot(filename, t);
+	const auto m = read_mealy_from_dot(filename, t, check);
 	return {move(m), move(t)};
 }
 
