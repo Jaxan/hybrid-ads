@@ -1,34 +1,53 @@
-Yannakakis
-==========
+Hybrid adaptive distinguishing sequences
+========================================
 
-An algorithm to construct an adaptive distinguishing sequence for a mealy
-machine. If it does not exist, a partial sequence will be generated, which is
-still useful for generating a seperating set (in the sense of Lee and
-Yannakakis). The partial leaves will be augmented via ordinary seperating
-sequences. In effect, the resulting test method is an instantiation of the HSI-
-method, which tends towards the DS-method.
+In FSM-based test generation, a key feature of smart tests are efficient state
+identifiers. This tool generates a test suite based on the adaptive
+distinguishing sequences as described by Lee and Yannakakis (1994). Many Mealy
+machines do not admit such sequences, but luckily the sequences can be extended
+in order to obtain a complete test suite.
+
+*NOTE*: This repository was originally located at
+[here](https://gitlab.science.ru.nl/moerman/Yannakakis).
+But I realised that installing the software was not as easy as it should be,
+and so I cleaned up dependencies, while keeping the original repository fixed.
+(Also some people might still use the old link.)
+
+
+## Introduction
+
+This tool will generate a complete test suite for a given specification. The
+specification should be given as a completely-specified, deterministic Mealy
+machine (or finite state machine, FSM). Also the implementation is assumed to
+be complete and deterministic. If the implementation passes the test suite,
+then it is guaranteed to be equivalent or to have at least k more states.
+The parameter k can be chosen. The size of the test suite is polynomial in the
+number of states of the specification, but exponential in k.
+
+There are many ways to generate such a complete test suite. Many variations,
+W, Wp, HSI, ADS, UIOv, ..., exist in literature. Implemented here (as of
+writing) are HSI, ADS and the hybrid-ADS method. Since the ADS method is not
+valid for all Mealy machines, this tool extends the method to be complete,
+hence the name "hybrid-ADS". This is a new method (although very similar to the
+HSI and ADS methods).
+
+In addition to choosing the state identifier, one can also choose how the
+prefixes for the tests are generated. Typically, one will use shortest paths,
+but longer ones can be used too.
+
+All algorithms implemented here can be randomised, which can greatly reduce
+the size of the test suite. 
 
 Most of the algorithms are found in the directory `lib/` and their usage is best
-illustrated in `src/main.cpp` or `src/methods.cpp`.
-
-Currently states and inputs are encoded internally as integer values (because
-this enables fast indexing). Only for I/O, maps are used to translate between
-integers and strings. To reduce the memory footprint `uint16_t`s are used, as
-the range is big enough for our use cases (`uint8_t` is clearly too small for
-the number of states, but could be used for alphabets).
+illustrated in `src/main.cpp`. The latter can be used as a stand-alone tool.
+The input to the executable are `.dot` files (of a specific type). Please look
+at the provided example to get started.
 
 
 ## Building
 
-There are two dependencies: docopt.cpp (for handling program options) and boost
-(for an optional type and string manipulations). The first dependency is a git
-submodule and can be obtained with:
-
-```
-git submodule update --init
-```
-
-Assuming boost is installed on your system, we can build the tool with cmake:
+Currently there is still one dependency: Boost. Assuming boost is installed on
+your system, we can build the tool with cmake:
 
 ```
 mkdir build
@@ -37,32 +56,38 @@ cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
 make
 ```
 
-Note that you'll need c++14, but clang in Mac
-OSX will understand that (and if not, you'll have to update Xcode). The main
-sourcefile (`src/main.cpp`) can also be built with c++11 (this is tested on some
-commits on both Windows and linux).
+I hope most of the code is portable c++11. But I may have used some c++14
+features. (If this is a problem for you, please let me know.)
 
-
-### Notes for linux
-
-There seems to be a problem with docopt.cpp with gcc-4.9 as well... (Everything
-compiles, but the program options are not parsed well.) If you want to build
-with `clang` on linux, you should also use `libc++`. Try the following:
-
-```
-sudo apt-get install libc++-dev
-mkdir build
-cd build
-CXX=clang++ CC=clang CXXFLAGS=-stdlib=libc++ LDFLAGS=-pthread cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
-make
-
-```
 
 ## Java
 
 For now the java code, which acts as a bridge between LearnLib and this c++
 tool, is included here (can be out-dated). But it should earn its own repo at
 some point. Also, my javanese is a bit rusty...
+
+
+## Implementation details
+
+Currently states and inputs are encoded internally as integer values (because
+this enables fast indexing). Only for I/O, maps are used to translate between
+integers and strings. To reduce the memory footprint `uint16_t`s are used, as
+the range is big enough for our use cases (`uint8_t` is clearly too small for
+the number of states, but could be used for alphabets).
+
+A prefix tree (or trie) is used to reduce the test suite, by removing common
+prefixes. However, this can quickly grow in size. Be warned!
+
+
+## TODO
+
+* Implement a proper radix tree (or Patricia tree) to reduce memory usage.
+* Remove the dependency on boost.
+* Implement the SPY method for finding smarter prefixes.
+* Compute independent structures in parallel (this was done in the first
+  version of the tool).
+* Implement the O(n log n) algorithm to find state identifiers, instead of the
+  current (roughly) O(n^2) algorithm.
 
 
 ## License

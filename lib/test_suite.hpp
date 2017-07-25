@@ -26,4 +26,4 @@ void randomized_test_suffix(mealy const & specification, transfer_sequences cons
                             size_t rnd_length, writer const & output, uint_fast32_t random_seed);
 
 /// \brief returns a writer which simply writes everything to cout (via inputs)
-writer default_writer(const std::vector<std::string> & inputs);
+writer default_writer(const std::vector<std::string> & inputs, std::ostream & os);

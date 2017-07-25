@@ -1,3 +1,0 @@
-[submodule "contrib/docopt.cpp"]
-	path = contrib/docopt.cpp
-	url = https://github.com/Jaxan/docopt.cpp.git

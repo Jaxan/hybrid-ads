@@ -132,13 +132,13 @@ void randomized_test_suffix(const mealy & specification, const transfer_sequence
 	}
 }
 
-writer default_writer(std::vector<std::string> const & inputs) {
+writer default_writer(std::vector<std::string> const & inputs, std::ostream & os) {
 	static const auto print_word = [&](word w) {
-		for (auto && x : w) cout << inputs[x] << ' ';
+		for (auto && x : w) os << inputs[x] << ' ';
 	};
 	static const auto reset = [&] {
-		cout << endl;
-		return bool(cout);
+		os << endl;
+		return bool(os);
 	};
 	return {print_word, reset};
 }
