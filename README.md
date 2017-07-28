@@ -46,8 +46,8 @@ at the provided example to get started.
 
 ## Building
 
-Currently there is still one dependency: Boost. Assuming boost is installed on
-your system, we can build the tool with cmake:
+There are no dependencies to install.
+You can build the tool with `cmake`:
 
 ```
 mkdir build
@@ -82,7 +82,6 @@ prefixes. However, this can quickly grow in size. Be warned!
 ## TODO
 
 * Implement a proper radix tree (or Patricia tree) to reduce memory usage.
-* Remove the dependency on boost.
 * Implement the SPY method for finding smarter prefixes.
 * Compute independent structures in parallel (this was done in the first
   version of the tool).

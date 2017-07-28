@@ -1,9 +1,8 @@
 #include "read_mealy.hpp"
 #include "mealy.hpp"
 
-#include <boost/algorithm/string/trim.hpp>
-
 #include <cassert>
+#include <cctype>
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
@@ -13,6 +12,20 @@ using namespace std;
 
 static string easy_substr(string const & s, size_t begin, size_t end){
 	return s.substr(begin, end - begin);
+}
+
+static string trim_copy(string const & str) {
+	auto it = str.begin();
+	while(it != str.end() && isspace(*it)){
+		it++;
+	}
+
+	auto e = str.end();
+	while(it != e && isspace(*(e-1))) {
+		e--;
+	}
+
+	return string(it, e);
 }
 
 mealy read_mealy_from_txt(std::istream & in, bool check) {
@@ -71,7 +84,6 @@ mealy read_mealy_from_dot(std::istream & in, translation & t, bool check){
 
 	string line;
 	while(getline(in, line)){
-		using boost::algorithm::trim_copy;
 		const auto npos = std::string::npos;
 
 		if(line.find("}") != string::npos) break;
