@@ -47,7 +47,7 @@ static const char USAGE[] =
       -o <filename>  Output filename ('-' or don't specify for stdout)
 )";
 
-enum Mode { ALL, FIXED, RANDOM };
+enum Mode { ALL, FIXED, RANDOM, WSET };
 enum PrefixMode { MIN, LEXMIN, BUGGY, DFS };
 enum SuffixMode { HSI, HADS, NOSUFFIX };
 
@@ -71,7 +71,7 @@ main_options parse_options(int argc, char ** argv) {
 	main_options opts;
 
 	static const map<string, Mode> mode_names = {
-	    {"all", ALL}, {"fixed", FIXED}, {"random", RANDOM}};
+	    {"all", ALL}, {"fixed", FIXED}, {"random", RANDOM}, {"wset", WSET}};
 	static const map<string, PrefixMode> prefix_names = {
 	    {"minimal", MIN}, {"lexmin", LEXMIN}, {"buggy", BUGGY}, {"longest", DFS}};
 	static const map<string, SuffixMode> suffix_names = {
@@ -232,6 +232,8 @@ int main(int argc, char * argv[]) try {
 	}();
 
 	auto transfer_sequences = [&] {
+		if (args.mode == WSET) return vector<word>{};
+
 		time_logger t("determining transfer sequences");
 		switch (args.prefix_mode) {
 		case LEXMIN:
@@ -278,6 +280,17 @@ int main(int argc, char * argv[]) try {
 		}
 		cout << endl;
 	};
+
+	if (args.mode == WSET) {
+		for(const auto & wp : separating_family) {
+			for(const auto & w : wp.local_suffixes){
+				test_suite.insert(w);
+			}
+		}
+		test_suite.for_each(output_word);
+
+		return 0;
+	}
 
 	if (fixed_part) {
 		// For the exhaustive/preset part we first collect all words
