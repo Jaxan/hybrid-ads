@@ -24,7 +24,13 @@
  * I've installed this software several times, and it was never
  * easy because of its dependencies.
  */
+#ifdef _WIN32
+extern "C" {
+#include <windows_getopt.h>
+}
+#else
 #include <unistd.h>
+#endif
 
 using namespace std;
 

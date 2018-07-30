@@ -60,6 +60,26 @@ I hope most of the code is portable c++11. But I may have used some c++14
 features. (If this is a problem for you, please let me know.)
 
 
+### Windows
+
+David Huistra tried to build the tool on Windows using MinGW. That did not
+work. (Dynamic linker errors, probably because I am using c++11.) But it does
+work with Visual Studio 2015. For this, you can instruct `cmake` to generate
+a solution file:
+
+```
+mkdir build
+cd build
+cmake -G "Visual Studio 14" -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
+```
+
+See [here](https://cmake.org/cmake/help/latest/manual/cmake-generators.7.html)
+for other versions of Visual Studio (not tested). After `cmake` you can open
+the solution file and build the project. NOTE: The `Debug` build does not work
+properly (I will have to look into this), so I recommend building the
+`RelWithDebInfo` configuration.
+
+
 ## Java
 
 For now the java code, which acts as a bridge between LearnLib and this c++
