@@ -9,9 +9,13 @@ using namespace std;
 void test(const mealy & specification, const transfer_sequences & prefixes,
           const separating_family & separating_family, size_t k_max, const writer & output) {
 	vector<word> all_sequences(1);
+        test(specification, prefixes, all_sequences, separating_family, k_max, output);
+}
 
-	for (size_t k = 0; k <= k_max; ++k) {
-		// clog << "*** K = " << k << endl;
+void test(const mealy & specification, const transfer_sequences & prefixes,
+          vector<word> & all_sequences, const separating_family & separating_family,
+          size_t k_max, const writer & output) {
+	for (size_t k = 0; k < k_max; ++k) {
 
 		for (state s = 0; s < specification.graph_size; ++s) {
 			const auto prefix = prefixes[s];

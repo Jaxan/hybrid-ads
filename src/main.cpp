@@ -47,8 +47,10 @@ static const char USAGE[] =
       -p <arg>       How to generate prefixes: minimal, lexmin, buggy, longest
       -s <arg>       How to generate suffixes: hsi, hads, none
       -k <num>       Number of extra states to check for (minus 1)
+      -l <num>       (l <= k) Redundancy free part of tests
       -r <num>       Expected length of random infix word
       -x <seed>      32 bits seeds for deterministic execution (0 is not valid)
+      -e             More memory efficient
       -f <filename>  Input filename ('-' or don't specify for stdin)
       -o <filename>  Output filename ('-' or don't specify for stdout)
 )";
@@ -61,11 +63,14 @@ struct main_options {
 	bool help = false;
 	bool version = false;
 
+	bool skip_dup = true;
+
 	Mode mode = ALL;
 	PrefixMode prefix_mode = MIN;
 	SuffixMode suffix_mode = HADS;
 
 	unsigned long k_max = 3;      // 3 means 2 extra states
+	unsigned long l = 2;          // length 0, 1 will be redundancy free
 	unsigned long rnd_length = 8; // in addition to k_max
 	unsigned long seed = 0;       // 0 for unset/noise
 
@@ -85,7 +90,7 @@ main_options parse_options(int argc, char ** argv) {
 
 	try {
 		int c;
-		while ((c = getopt(argc, argv, "hvm:p:s:k:r:x:f:o:")) != -1) {
+		while ((c = getopt(argc, argv, "hvem:p:s:k:l:r:x:f:o:")) != -1) {
 			switch (c) {
 			case 'h': // show help message
 				opts.help = true;
@@ -105,11 +110,17 @@ main_options parse_options(int argc, char ** argv) {
 			case 'k': // select extra states / k-value
 				opts.k_max = stoul(optarg);
 				break;
+			case 'l': //
+				opts.l = stoul(optarg);
+				break;
 			case 'r': // expected random length
 				opts.rnd_length = stoul(optarg);
 				break;
 			case 'x': // seed
 				opts.seed = stoul(optarg);
+				break;
+			case 'e':
+				opts.skip_dup = false;
 				break;
 			case 'f': // input filename
 				opts.input_filename = optarg;
@@ -130,6 +141,7 @@ main_options parse_options(int argc, char ** argv) {
 		exit(2);
 	}
 
+	opts.l = min(opts.l, opts.k_max);
 	return opts;
 }
 
@@ -302,7 +314,9 @@ int main(int argc, char * argv[]) try {
 		// For the exhaustive/preset part we first collect all words
 		// (while removing redundant ones) before outputting them.
 		time_logger t("outputting all preset tests");
-		test(machine, transfer_sequences, separating_family, args.k_max,
+
+		vector<word> mid_sequences(1);
+		test(machine, transfer_sequences, mid_sequences, separating_family, args.l + 1,
 		     {[&buffer](auto const & w) { buffer.insert(buffer.end(), w.begin(), w.end()); },
 		      [&buffer, &test_suite]() {
 			      test_suite.insert(buffer);
@@ -310,7 +324,21 @@ int main(int argc, char * argv[]) try {
 			      return true;
 			  }});
 
-		test_suite.for_each(output_word);
+		auto first_suite = flatten(test_suite);
+		mt19937 g;
+		shuffle(first_suite.begin(), first_suite.end(), g);
+		for (auto const & w : first_suite) output_word(w);
+		first_suite.clear();
+
+		test(machine, transfer_sequences, mid_sequences, separating_family, args.k_max - args.l,
+		     {[&buffer](auto const & w) { buffer.insert(buffer.end(), w.begin(), w.end()); },
+		      [&buffer, &test_suite, &output_word, &args]() {
+			      if (!args.skip_dup || test_suite.insert(buffer)) {
+				      output_word(buffer);
+			      }
+			      buffer.clear();
+			      return bool(cout);
+			   }});
 	}
 
 	if (random_part) {
@@ -323,9 +351,9 @@ int main(int argc, char * argv[]) try {
 		randomized_test(
 		    machine, transfer_sequences, separating_family, k_max_, args.rnd_length,
 		    {[&buffer](auto const & w) { buffer.insert(buffer.end(), w.begin(), w.end()); },
-		     [&buffer, &test_suite, &output_word]() {
+		     [&buffer, &test_suite, &output_word, &args]() {
 			     // TODO: probably we want to bound the size of the prefix tree
-			     if (test_suite.insert(buffer)) {
+			     if (!args.skip_dup || test_suite.insert(buffer)) {
 				     output_word(buffer);
 			     }
 			     buffer.clear();
