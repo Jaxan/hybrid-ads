@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <cstdlib>
 #include <iostream>
+#include <iomanip>
 #include <map>
 #include <random>
 #include <stdexcept>
@@ -50,7 +51,8 @@ static const char USAGE[] =
       -l <num>       (l <= k) Redundancy free part of tests
       -r <num>       Expected length of random infix word
       -x <seed>      32 bits seeds for deterministic execution (0 is not valid)
-      -e             More memory efficient
+      -e             More memory efficient, but duplicate tests
+      -n             Output soms statistics
       -f <filename>  Input filename ('-' or don't specify for stdin)
       -o <filename>  Output filename ('-' or don't specify for stdout)
 )";
@@ -65,14 +67,15 @@ struct main_options {
 
 	bool skip_dup = true;
 
-	Mode mode = ALL;
+	Mode mode = FIXED;
 	PrefixMode prefix_mode = MIN;
 	SuffixMode suffix_mode = HADS;
 
-	unsigned long k_max = 3;      // 3 means 2 extra states
-	unsigned long l = 2;          // length 0, 1 will be redundancy free
+	unsigned long k_max = 1;      // 3 means 2 extra states
+	unsigned long l = 1;          // length 0, 1 will be redundancy free
 	unsigned long rnd_length = 8; // in addition to k_max
 	unsigned long seed = 0;       // 0 for unset/noise
+	bool stats = false;
 
 	string input_filename;  // empty for stdin
 	string output_filename; // empty for stdout
@@ -90,7 +93,7 @@ main_options parse_options(int argc, char ** argv) {
 
 	try {
 		int c;
-		while ((c = getopt(argc, argv, "hvem:p:s:k:l:r:x:f:o:")) != -1) {
+		while ((c = getopt(argc, argv, "hvenm:p:s:k:l:r:x:f:o:")) != -1) {
 			switch (c) {
 			case 'h': // show help message
 				opts.help = true;
@@ -121,6 +124,9 @@ main_options parse_options(int argc, char ** argv) {
 				break;
 			case 'e':
 				opts.skip_dup = false;
+				break;
+			case 'n':
+				opts.stats = true;
 				break;
 			case 'f': // input filename
 				opts.input_filename = optarg;
@@ -292,11 +298,15 @@ int main(int argc, char * argv[]) try {
 	// we will remove redundancies using a radix tree/prefix tree/trie
 	trie<input> test_suite;
 	word buffer;
-	const auto output_word = [&inputs](const auto & w) {
+	unsigned int symbol_count = 0;
+	unsigned int word_count = 0;
+	const auto output_word = [&inputs, &symbol_count, &word_count](const auto & w) {
 		for (const auto & x : w) {
 			cout << inputs[x] << ' ';
+			symbol_count++;
 		}
 		cout << endl;
+		word_count++;
 	};
 
 	if (args.mode == WSET) {
@@ -339,6 +349,11 @@ int main(int argc, char * argv[]) try {
 			      buffer.clear();
 			      return bool(cout);
 			   }});
+
+		if (args.stats) {
+			clog << "words:   " << setw(9) << word_count << endl;
+			clog << "symbols: " << setw(9) << symbol_count << endl;
+		}
 	}
 
 	if (random_part) {
