@@ -79,9 +79,6 @@ mealy read_mealy_from_txt(const std::string & filename, bool check) {
 mealy read_mealy_from_dot(std::istream & in, translation & t, bool check){
 	mealy m;
 
-	std::unordered_map<std::string, state> state_indices;
-	state max_state = 0;
-
 	string line;
 	while(getline(in, line)){
 		const auto npos = std::string::npos;
@@ -106,22 +103,22 @@ mealy read_mealy_from_dot(std::istream & in, translation & t, bool check){
 		const auto output = trim_copy(easy_substr(line, slash_pos+1, quote2_pos));
 
 		// make fresh indices, if needed
-		if(state_indices.count(lh) < 1) state_indices[lh] = max_state++;
-		if(state_indices.count(rh) < 1) state_indices[rh] = max_state++;
+		if(t.state_indices.count(lh) < 1) t.state_indices[lh] = t.max_state++;
+		if(t.state_indices.count(rh) < 1) t.state_indices[rh] = t.max_state++;
 		if(t.input_indices.count(input) < 1) t.input_indices[input] = t.max_input++;
 		if(t.output_indices.count(output) < 1) t.output_indices[output] = t.max_output++;
 
-		if(defined(m, state_indices[lh], t.input_indices[input]))
+		if(defined(m, t.state_indices[lh], t.input_indices[input]))
 			throw runtime_error("Nondeterministic machine");
 
 		// add edge
-		m.graph.resize(max_state);
-		auto & v = m.graph[state_indices[lh]];
+		m.graph.resize(t.max_state);
+		auto & v = m.graph[t.state_indices[lh]];
 		v.resize(t.max_input);
-		v[t.input_indices[input]] = mealy::edge(state_indices[rh], t.output_indices[output]);
+		v[t.input_indices[input]] = mealy::edge(t.state_indices[rh], t.output_indices[output]);
 	}
 
-	m.graph_size = max_state;
+	m.graph_size = t.max_state;
 	m.input_size = t.max_input;
 	m.output_size = t.max_output;
 

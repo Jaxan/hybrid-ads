@@ -44,7 +44,7 @@ static const char USAGE[] =
     Options:
       -h             Show this screen
       -v             Show version
-      -m <arg>       Operation mode: all, fixed, random
+      -m <arg>       Operation mode: all, fixed, random, wset, si
       -p <arg>       How to generate prefixes: minimal, lexmin, buggy, longest
       -s <arg>       How to generate suffixes: hsi, hads, none
       -k <num>       Number of extra states to check for (minus 1)
@@ -57,7 +57,7 @@ static const char USAGE[] =
       -o <filename>  Output filename ('-' or don't specify for stdout)
 )";
 
-enum Mode { ALL, FIXED, RANDOM, WSET };
+enum Mode { ALL, FIXED, RANDOM, WSET, SI };
 enum PrefixMode { MIN, LEXMIN, BUGGY, DFS };
 enum SuffixMode { HSI, HADS, NOSUFFIX };
 
@@ -85,7 +85,7 @@ main_options parse_options(int argc, char ** argv) {
 	main_options opts;
 
 	static const map<string, Mode> mode_names = {
-	    {"all", ALL}, {"fixed", FIXED}, {"random", RANDOM}, {"wset", WSET}};
+	    {"all", ALL}, {"fixed", FIXED}, {"random", RANDOM}, {"wset", WSET}, {"si", SI}};
 	static const map<string, PrefixMode> prefix_names = {
 	    {"minimal", MIN}, {"lexmin", LEXMIN}, {"buggy", BUGGY}, {"longest", DFS}};
 	static const map<string, SuffixMode> suffix_names = {
@@ -256,7 +256,7 @@ int main(int argc, char * argv[]) try {
 	}();
 
 	auto transfer_sequences = [&] {
-		if (args.mode == WSET) return vector<word>{};
+		if (args.mode == WSET || args.mode == SI) return vector<word>{};
 
 		time_logger t("determining transfer sequences");
 		switch (args.prefix_mode) {
@@ -316,6 +316,23 @@ int main(int argc, char * argv[]) try {
 			}
 		}
 		test_suite.for_each(output_word);
+
+		return 0;
+	}
+
+	if (args.mode == SI) {
+		const auto state_names = create_reverse_map(translation.state_indices);
+		for(auto i = 0; i < separating_family.size(); ++i) {
+			const auto & wp = separating_family[i];
+			const auto & name = state_names[i];
+			test_suite.clear();
+			cout << "state identifier for " << name << ":\n";
+			for(const auto & w : wp.local_suffixes){
+				test_suite.insert(w);
+			}
+			test_suite.for_each(output_word);
+			cout << endl;
+		}
 
 		return 0;
 	}

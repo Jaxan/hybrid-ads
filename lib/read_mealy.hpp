@@ -33,11 +33,15 @@ struct translation {
 
 	std::unordered_map<std::string, output> output_indices;
 	output max_output = 0;
+
+	std::unordered_map<std::string, state> state_indices;
+	state max_state = 0;
 };
 
 /// \brief inverts the input_indices and output_indices maps
 std::vector<std::string> create_reverse_map(std::unordered_map<std::string, input> const & indices);
 std::vector<std::string> create_reverse_map(std::unordered_map<std::string, output> const & indices);
+std::vector<std::string> create_reverse_map(std::unordered_map<std::string, state> const & indices);
 
 /// \brief defines trivial translation (the string represent integers directly)
 translation create_translation_for_mealy(mealy const & m);
