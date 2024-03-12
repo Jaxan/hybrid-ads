@@ -79,6 +79,7 @@ std::vector<std::reference_wrapper<const splitting_tree>> multi_lca(const splitt
 /// \p check_validity checks whether the transition/output map is injective on the current set of
 /// nodes which is being split. Setting this false degenerates to generating pairwise separating
 /// sequences. \p assert_minimal_order is used to produce minimal (pairwise) separating sequences.
+/// But it does not seem to create a complete splitting tree, meaning that it is not useful.
 /// \p cach_succesors is needed by the second step in the LY algorithm and \p randomized randomizes
 /// the loops over the alphabet.
 struct options {

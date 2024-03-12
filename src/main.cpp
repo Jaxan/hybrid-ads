@@ -147,6 +147,12 @@ main_options parse_options(int argc, char ** argv) {
 		exit(2);
 	}
 
+	if ((opts.mode == WSET || opts.mode == SI) && opts.suffix_mode == NOSUFFIX) {
+		cerr << "Inconsistent options: outputs are state identifiers (-m)" << endl;
+		cerr << "But no suffixes will be computed (-s)" << endl;
+		exit(2);
+	}
+
 	opts.l = min(opts.l, opts.k_max);
 	return opts;
 }
@@ -166,7 +172,7 @@ int main(int argc, char * argv[]) try {
 	}
 
 	if (args.version) {
-		cout << "Version 2 (July 2017)" << endl;
+		cout << "Version 2.1 (Feb 2024)" << endl;
 		exit(0);
 	}
 
@@ -194,7 +200,7 @@ int main(int argc, char * argv[]) try {
 		if (filename.find(".txt") != string::npos) {
 			const auto m = read_mealy_from_txt(filename);
 			const auto t = create_translation_for_mealy(m);
-			return make_pair(move(m), move(t));
+			return make_pair(std::move(m), std::move(t));
 		} else if (filename.find(".dot") != string::npos) {
 			return read_mealy_from_dot(filename);
 		}
@@ -203,7 +209,7 @@ int main(int argc, char * argv[]) try {
 		return read_mealy_from_dot(filename);
 	}();
 
-	const auto & machine = reachable_submachine(move(machine_and_translation.first), 0);
+	const auto & machine = reachable_submachine(std::move(machine_and_translation.first), 0);
 	const auto & translation = machine_and_translation.second;
 
 	// every thread gets its own seed

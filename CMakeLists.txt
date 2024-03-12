@@ -1,7 +1,7 @@
-project(Yannakakis)
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.5)
+project(hybrid-ads)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1y")
+set(CMAKE_CXX_STANDARD 14)
 
 find_package (Threads)
 set(libs ${libs} ${CMAKE_THREAD_LIBS_INIT})

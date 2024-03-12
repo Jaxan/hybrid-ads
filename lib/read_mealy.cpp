@@ -28,7 +28,7 @@ static string trim_copy(string const & str) {
 	return string(it, e);
 }
 
-mealy read_mealy_from_txt(std::istream & in, bool check) {
+mealy read_mealy_from_txt(istream & in, bool check) {
 	mealy m;
 
 	state max_state = 0;
@@ -71,12 +71,12 @@ mealy read_mealy_from_txt(std::istream & in, bool check) {
 	return m;
 }
 
-mealy read_mealy_from_txt(const std::string & filename, bool check) {
+mealy read_mealy_from_txt(const string & filename, bool check) {
 	std::ifstream file(filename);
 	return read_mealy_from_txt(file, check);
 }
 
-mealy read_mealy_from_dot(std::istream & in, translation & t, bool check){
+mealy read_mealy_from_dot(istream & in, translation & t, bool check){
 	mealy m;
 
 	string line;
@@ -136,30 +136,30 @@ mealy read_mealy_from_dot(const string & filename, translation & t, bool check){
 }
 
 
-std::pair<mealy, translation> read_mealy_from_dot(istream & in, bool check){
+pair<mealy, translation> read_mealy_from_dot(istream & in, bool check){
 	translation t;
 	const auto m = read_mealy_from_dot(in, t, check);
-	return {move(m), move(t)};
+	return {std::move(m), std::move(t)};
 }
 
 
-std::pair<mealy, translation> read_mealy_from_dot(const string & filename, bool check){
+pair<mealy, translation> read_mealy_from_dot(const string & filename, bool check){
 	translation t;
 	const auto m = read_mealy_from_dot(filename, t, check);
-	return {move(m), move(t)};
+	return {std::move(m), std::move(t)};
 }
 
 
 template <typename T>
-std::vector<std::string> create_reverse_map_impl(std::unordered_map<std::string, T> const & indices) {
-	std::vector<std::string> ret(indices.size());
+vector<string> create_reverse_map_impl(unordered_map<string, T> const & indices) {
+	vector<string> ret(indices.size());
 	for (auto && p : indices) {
 		ret[p.second] = p.first;
 	}
 	return ret;
 }
 
-std::vector<string> create_reverse_map(const std::unordered_map<string, input> & indices) {
+vector<string> create_reverse_map(const unordered_map<string, input> & indices) {
 	return create_reverse_map_impl(indices);
 }
 

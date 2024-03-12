@@ -64,7 +64,7 @@ adaptive_distinguishing_sequence create_adaptive_distinguishing_sequence(const r
 			sort(begin(new_c.CI), end(new_c.CI));
 
 			if(!new_c.CI.empty()){
-				node.children.push_back(move(new_c));
+				node.children.push_back(std::move(new_c));
 			}
 		}
 
